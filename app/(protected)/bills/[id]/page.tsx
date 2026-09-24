@@ -3,7 +3,7 @@ import { getInvoiceByIdAction, getSettingsAction } from "@/actions/invoices";
 import InvoiceView from "@/components/InvoiceView";
 import PrintButton from "@/components/PrintButton";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 
 export default async function BillDetailPage({
   params,
@@ -27,9 +27,9 @@ export default async function BillDetailPage({
   };
 
   return (
-    <div className="p-6 md:p-10 bg-gray-50 min-h-screen print:bg-white print:p-0">
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen print:bg-white print:p-0">
       {/* Toolbar — hidden on print */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 max-w-[210mm] mx-auto print:hidden bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 max-w-5xl mx-auto print:hidden bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center gap-4">
           <Link
             href="/bills"
@@ -44,13 +44,22 @@ export default async function BillDetailPage({
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/bills/${id}/edit`}
+            className="flex items-center gap-2 px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 text-base font-bold rounded-xl transition-all shadow-2xs hover:-translate-y-0.5"
+            title="Edit Entire Bill Form"
+          >
+            <Pencil className="w-4 h-4 text-blue-600" />
+            Edit Bill
+          </Link>
           <PrintButton />
         </div>
       </div>
 
       {/* Invoice */}
       <InvoiceView
+        invoiceId={invoice.id}
         invoiceNumber={invoice.invoiceNumber}
         date={invoice.date}
         transport={invoice.transport}

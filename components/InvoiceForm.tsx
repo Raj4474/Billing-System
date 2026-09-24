@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { createInvoiceAction, searchCustomersAction, searchProductsAction } from "@/actions/invoices";
+import { createInvoiceAction, updateFullInvoiceAction, searchCustomersAction, searchProductsAction } from "@/actions/invoices";
 import { Plus, Trash2 } from "lucide-react";
 
 type LineItem = {
@@ -118,7 +118,9 @@ type ProductResult = {
 
 const dict = {
   newBill: { en: "New Bill", gu: "નવું બિલ" },
+  editBill: { en: "Edit Bill", gu: "બિલમાં ફેરફાર કરો" },
   createSubtitle: { en: "Create a new tax invoice", gu: "નવું ટેક્સ બિલ બનાવો" },
+  editSubtitle: { en: "Modify invoice details and save changes", gu: "બિલની વિગતોમાં ફેરફાર કરો અને સેવ કરો" },
   customerBillTo: { en: "Customer (Bill To)", gu: "ગ્રાહક (બિલ મોકલવા માટે)" },
   customerName: { en: "Customer Name", gu: "ગ્રાહકનું નામ" },
   address: { en: "Address", gu: "સરનામું" },
@@ -143,6 +145,7 @@ const dict = {
   grandTotal: { en: "Grand Total", gu: "કુલ (Grand Total)" },
   notes: { en: "Notes (optional)", gu: "નોંધ (વૈકલ્પિક)" },
   saveAndView: { en: "Save & View", gu: "સેવ કરો અને જુઓ" },
+  updateAndView: { en: "Update & View", gu: "અપડેટ કરો અને જુઓ" },
   cancel: { en: "Cancel", gu: "રદ કરો" },
   saving: { en: "Saving…", gu: "સેવ થાય છે…" },
   typeCustomerName: { en: "Type customer name…", gu: "ગ્રાહકનું નામ લખો…" },
@@ -152,35 +155,80 @@ const dict = {
 
 type Lang = "en" | "gu";
 
+type InitialInvoice = {
+  id: string;
+  invoiceNumber: string;
+  date: string;
+  customerId?: string | null;
+  customerSnapshot: {
+    name: string;
+    address?: string;
+    gstin?: string;
+    phone?: string;
+    placeOfSupply?: string;
+  };
+  transport?: string | null;
+  ewayBillNo?: string | null;
+  items: {
+    srNo: number;
+    productName: string;
+    hsnCode?: string | null;
+    quantity: string | number;
+    unit: string;
+    rate: string | number;
+    gstPercent: string | number;
+    amount: string | number;
+  }[];
+  notes?: string | null;
+  gstMode?: "cgst_sgst" | "igst";
+};
+
 export default function InvoiceForm({
   defaultInvoiceNumber,
+  initialInvoice,
 }: {
   defaultInvoiceNumber?: string;
+  initialInvoice?: InitialInvoice;
 }) {
+  const isEditing = !!initialInvoice;
   const [lang, setLang] = useState<Lang>("en");
   const t = (key: keyof typeof dict) => dict[key][lang];
 
   const today = new Date().toISOString().split("T")[0];
 
   // Customer
-  const [customerName, setCustomerName] = useState("");
-  const [customerAddress, setCustomerAddress] = useState("");
-  const [customerGstin, setCustomerGstin] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerPos, setCustomerPos] = useState(""); // place of supply
-  const [customerId, setCustomerId] = useState<string | undefined>();
+  const [customerName, setCustomerName] = useState(initialInvoice?.customerSnapshot?.name || "");
+  const [customerAddress, setCustomerAddress] = useState(initialInvoice?.customerSnapshot?.address || "");
+  const [customerGstin, setCustomerGstin] = useState(initialInvoice?.customerSnapshot?.gstin || "");
+  const [customerPhone, setCustomerPhone] = useState(initialInvoice?.customerSnapshot?.phone || "");
+  const [customerPos, setCustomerPos] = useState(initialInvoice?.customerSnapshot?.placeOfSupply || "");
+  const [customerId, setCustomerId] = useState<string | undefined>(initialInvoice?.customerId || undefined);
 
   // Invoice meta
-  const [date, setDate] = useState(today);
-  const [transport, setTransport] = useState("");
-  const [ewayBillNo, setEwayBillNo] = useState("");
-  const [notes, setNotes] = useState("");
+  const [date, setDate] = useState(initialInvoice?.date || today);
+  const [transport, setTransport] = useState(initialInvoice?.transport || "");
+  const [ewayBillNo, setEwayBillNo] = useState(initialInvoice?.ewayBillNo || "");
+  const [notes, setNotes] = useState(initialInvoice?.notes || "");
 
   // GST mode
-  const [gstMode, setGstMode] = useState<"cgst_sgst" | "igst">("cgst_sgst");
+  const [gstMode, setGstMode] = useState<"cgst_sgst" | "igst">(initialInvoice?.gstMode || "cgst_sgst");
 
   // Items
-  const [items, setItems] = useState<LineItem[]>([emptyItem(1)]);
+  const [items, setItems] = useState<LineItem[]>(() => {
+    if (initialInvoice && initialInvoice.items.length > 0) {
+      return initialInvoice.items.map((i, idx) => ({
+        srNo: idx + 1,
+        productName: i.productName,
+        hsnCode: i.hsnCode || "",
+        quantity: String(i.quantity),
+        unit: i.unit || "kg",
+        rate: String(i.rate),
+        gstPercent: String(i.gstPercent),
+        amount: Number(i.amount) || 0,
+      }));
+    }
+    return [emptyItem(1)];
+  });
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -232,7 +280,7 @@ export default function InvoiceForm({
     if (items.every((i) => !i.productName.trim())) { alert("Add at least one item."); return; }
 
     setSubmitting(true);
-    await createInvoiceAction({
+    const invoicePayload = {
       date,
       customerId,
       customerSnapshot: {
@@ -262,7 +310,13 @@ export default function InvoiceForm({
       igst,
       grandTotal,
       notes: notes || undefined,
-    });
+    };
+
+    if (isEditing && initialInvoice?.id) {
+      await updateFullInvoiceAction(initialInvoice.id, invoicePayload);
+    } else {
+      await createInvoiceAction(invoicePayload);
+    }
   }
 
   const inputCls =
@@ -272,8 +326,12 @@ export default function InvoiceForm({
     <div className="space-y-6">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("newBill")}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t("createSubtitle")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEditing ? `${t("editBill")} (${initialInvoice.invoiceNumber})` : t("newBill")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {isEditing ? t("editSubtitle") : t("createSubtitle")}
+          </p>
         </div>
         <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
           <label htmlFor="lang-select" className="text-sm font-medium text-gray-600">Language:</label>
@@ -583,7 +641,7 @@ export default function InvoiceForm({
             disabled={submitting}
             className="flex-1 px-6 py-4 bg-blue-600 text-white text-lg font-bold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-all shadow-md hover:-translate-y-0.5"
           >
-            {submitting ? t("saving") : t("saveAndView")}
+            {submitting ? t("saving") : (isEditing ? t("updateAndView") : t("saveAndView"))}
           </button>
           <a
             href="/bills"

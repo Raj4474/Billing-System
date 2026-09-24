@@ -1,0 +1,66 @@
+import { notFound } from "next/navigation";
+import { getInvoiceByIdAction } from "@/actions/invoices";
+import InvoiceForm from "@/components/InvoiceForm";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+export default async function EditBillPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const invoice = await getInvoiceByIdAction(id);
+
+  if (!invoice) notFound();
+
+  const snap = invoice.customerSnapshot as {
+    name: string;
+    address?: string;
+    gstin?: string;
+    phone?: string;
+    placeOfSupply?: string;
+  };
+
+  const useIgst = parseFloat(invoice.igst || "0") > 0;
+
+  return (
+    <div className="p-6 md:p-10 max-w-5xl mx-auto">
+      <div className="mb-6 flex items-center gap-3">
+        <Link
+          href={`/bills/${id}`}
+          className="flex items-center gap-2 text-base font-bold text-gray-500 hover:text-blue-600 transition-colors bg-white px-4 py-2 rounded-xl shadow-xs border border-gray-200"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Bill Preview
+        </Link>
+        <span className="text-gray-300">|</span>
+        <span className="font-mono text-gray-700 font-bold">{invoice.invoiceNumber}</span>
+      </div>
+
+      <InvoiceForm
+        initialInvoice={{
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          date: invoice.date,
+          customerId: invoice.customerId,
+          customerSnapshot: snap,
+          transport: invoice.transport,
+          ewayBillNo: invoice.ewayBillNo,
+          items: invoice.items.map((item) => ({
+            srNo: item.srNo,
+            productName: item.productName,
+            hsnCode: item.hsnCode,
+            quantity: String(item.quantity),
+            unit: item.unit,
+            rate: String(item.rate),
+            gstPercent: item.gstPercent ?? "0",
+            amount: Number(item.amount),
+          })),
+          notes: invoice.notes,
+          gstMode: useIgst ? "igst" : "cgst_sgst",
+        }}
+      />
+    </div>
+  );
+}

@@ -72,6 +72,8 @@ html, body {
     max-width: 100% !important;
     margin: 0 auto !important;
     padding: 0 !important;
+    zoom: 1 !important;
+    transform: none !important;
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #000000 !important;

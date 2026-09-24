@@ -240,4 +240,209 @@ export async function saveSettingsAction(data: Partial<typeof settings.$inferIns
       set: { ...data, updatedAt: new Date() },
     });
   revalidatePath("/settings");
+  revalidatePath("/bills");
+}
+
+// ─── Update Invoice Customer ──────────────────────────────────────────────────
+export async function updateInvoiceCustomerAction(
+  invoiceId: string,
+  customerSnapshot: CustomerSnapshot
+) {
+  await db
+    .update(invoices)
+    .set({ customerSnapshot })
+    .where(eq(invoices.id, invoiceId));
+
+  if (customerSnapshot.name) {
+    const [existing] = await db
+      .select()
+      .from(customers)
+      .where(ilike(customers.name, customerSnapshot.name))
+      .limit(1);
+
+    if (existing) {
+      await db
+        .update(customers)
+        .set({
+          address: customerSnapshot.address,
+          gstin: customerSnapshot.gstin,
+          phone: customerSnapshot.phone,
+          placeOfSupply: customerSnapshot.placeOfSupply,
+        })
+        .where(eq(customers.id, existing.id));
+    }
+  }
+
+  revalidatePath(`/bills/${invoiceId}`);
+  revalidatePath("/bills");
+}
+
+// ─── Update Invoice Meta (Date, Transport, eWay, Notes) ──────────────────────
+export async function updateInvoiceMetaAction(
+  invoiceId: string,
+  data: {
+    date?: string;
+    transport?: string;
+    ewayBillNo?: string;
+    notes?: string;
+  }
+) {
+  await db
+    .update(invoices)
+    .set(data)
+    .where(eq(invoices.id, invoiceId));
+
+  revalidatePath(`/bills/${invoiceId}`);
+  revalidatePath("/bills");
+}
+
+// ─── Update Invoice Items & Recalculate ───────────────────────────────────────
+export async function updateInvoiceItemsAction(
+  invoiceId: string,
+  items: InvoiceItem[],
+  forcedGstMode?: "cgst_sgst" | "igst"
+) {
+  const [current] = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.id, invoiceId))
+    .limit(1);
+
+  if (!current) throw new Error("Invoice not found");
+
+  const useIgst = forcedGstMode
+    ? forcedGstMode === "igst"
+    : parseFloat(current.igst || "0") > 0;
+
+  const validItems = items.filter((i) => i.productName.trim());
+  const subtotal = validItems.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+  const totalTax = validItems.reduce((s, i) => {
+    const gst = Number(i.gstPercent || 0);
+    return s + (Number(i.amount) || 0) * (gst / 100);
+  }, 0);
+
+  const cgst = useIgst ? 0 : totalTax / 2;
+  const sgst = useIgst ? 0 : totalTax / 2;
+  const igst = useIgst ? totalTax : 0;
+  const grandTotal = subtotal + totalTax;
+  const amountInWords = numberToWords(grandTotal);
+
+  // Replace invoice items
+  await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+  if (validItems.length > 0) {
+    await db.insert(invoiceItems).values(
+      validItems.map((item, idx) => ({
+        invoiceId,
+        srNo: idx + 1,
+        productName: item.productName,
+        hsnCode: item.hsnCode,
+        quantity: String(item.quantity),
+        unit: item.unit,
+        rate: String(item.rate),
+        gstPercent: String(item.gstPercent),
+        amount: String(item.amount),
+      }))
+    );
+  }
+
+  const roundedSubtotal = String(Math.round(subtotal * 100) / 100);
+  const roundedCgst = String(Math.round(cgst * 100) / 100);
+  const roundedSgst = String(Math.round(sgst * 100) / 100);
+  const roundedIgst = String(Math.round(igst * 100) / 100);
+  const roundedGrandTotal = String(Math.round(grandTotal * 100) / 100);
+
+  await db
+    .update(invoices)
+    .set({
+      subtotal: roundedSubtotal,
+      cgst: roundedCgst,
+      sgst: roundedSgst,
+      igst: roundedIgst,
+      grandTotal: roundedGrandTotal,
+      amountInWords,
+    })
+    .where(eq(invoices.id, invoiceId));
+
+  // Autocomplete learning
+  for (const item of validItems) {
+    if (item.productName.trim()) {
+      await db
+        .insert(products)
+        .values({
+          name: item.productName.trim(),
+          hsnCode: item.hsnCode,
+          defaultUnit: item.unit,
+          defaultRate: String(item.rate),
+          defaultGst: String(item.gstPercent),
+        })
+        .onConflictDoNothing();
+    }
+  }
+
+  revalidatePath(`/bills/${invoiceId}`);
+  revalidatePath("/bills");
+
+  return {
+    subtotal: roundedSubtotal,
+    cgst: roundedCgst,
+    sgst: roundedSgst,
+    igst: roundedIgst,
+    grandTotal: roundedGrandTotal,
+    amountInWords,
+    items: validItems.map((item, idx) => ({
+      ...item,
+      srNo: idx + 1,
+      quantity: String(item.quantity),
+      rate: String(item.rate),
+      gstPercent: String(item.gstPercent),
+      amount: String(item.amount),
+    })),
+  };
+}
+
+// ─── Update Full Invoice (from Edit Form) ────────────────────────────────────
+export async function updateFullInvoiceAction(
+  invoiceId: string,
+  input: CreateInvoiceInput
+) {
+  const amountInWords = numberToWords(input.grandTotal);
+
+  await db
+    .update(invoices)
+    .set({
+      date: input.date,
+      customerSnapshot: input.customerSnapshot,
+      transport: input.transport,
+      ewayBillNo: input.ewayBillNo,
+      subtotal: String(input.subtotal),
+      cgst: String(input.cgst),
+      sgst: String(input.sgst),
+      igst: String(input.igst),
+      grandTotal: String(input.grandTotal),
+      amountInWords,
+      notes: input.notes,
+    })
+    .where(eq(invoices.id, invoiceId));
+
+  await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+  const validItems = input.items.filter((i) => i.productName.trim());
+  if (validItems.length > 0) {
+    await db.insert(invoiceItems).values(
+      validItems.map((item, idx) => ({
+        invoiceId,
+        srNo: idx + 1,
+        productName: item.productName,
+        hsnCode: item.hsnCode,
+        quantity: String(item.quantity),
+        unit: item.unit,
+        rate: String(item.rate),
+        gstPercent: String(item.gstPercent),
+        amount: String(item.amount),
+      }))
+    );
+  }
+
+  revalidatePath(`/bills/${invoiceId}`);
+  revalidatePath("/bills");
+  redirect(`/bills/${invoiceId}`);
 }
