@@ -38,7 +38,7 @@ function useDebounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: n
 
 // ─── Autocomplete Input ───────────────────────────────────────────────────────
 
-function AutocompleteInput<T extends { id: string; name: string }>({
+function AutocompleteInput<T extends { id: string; name: string; hsnCode?: string | null; defaultGst?: string | null; defaultUnit?: string | null }>({
   value,
   onChange,
   onSelect,
@@ -57,7 +57,6 @@ function AutocompleteInput<T extends { id: string; name: string }>({
   const [open, setOpen] = useState(false);
 
   const search = useDebounce(async (q: string) => {
-    if (!q) { setSuggestions([]); setOpen(false); return; }
     const results = await onSearch(q);
     setSuggestions(results);
     setOpen(results.length > 0);
@@ -68,31 +67,125 @@ function AutocompleteInput<T extends { id: string; name: string }>({
     search(v);
   }
 
+  async function handleFocus() {
+    const results = await onSearch(value);
+    setSuggestions(results);
+    if (results.length > 0) setOpen(true);
+  }
+
   return (
     <div className="relative">
       <input
         type="text"
         value={value}
+        onFocus={handleFocus}
         onChange={(e) => handleChange(e.target.value)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
         placeholder={placeholder}
         className={className}
       />
       {open && (
-        <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
           {suggestions.map((s) => (
             <button
               key={s.id}
               type="button"
-              onMouseDown={() => { onSelect(s); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 text-gray-800"
+              onMouseDown={() => {
+                onSelect(s);
+                setOpen(false);
+              }}
+              className="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/80 transition-colors border-b last:border-b-0 border-gray-100 flex items-center justify-between cursor-pointer"
             >
-              {s.name}
+              <span className="font-bold text-gray-900 text-sm">{s.name}</span>
+              {(s.hsnCode || s.defaultGst) && (
+                <span className="text-[11px] text-gray-500 font-medium">
+                  {s.hsnCode ? `HSN: ${s.hsnCode}` : ""}
+                  {s.hsnCode && s.defaultGst ? " · " : ""}
+                  {s.defaultGst ? `GST: ${s.defaultGst}%` : ""}
+                </span>
+              )}
             </button>
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+const STANDARD_UNITS = [
+  { id: "kg", labelEn: "kg (Kilogram)", labelGu: "kg (કિલો)" },
+  { id: "ton", labelEn: "ton (Metric Ton)", labelGu: "ton (ટન)" },
+  { id: "quintal", labelEn: "quintal (Quintal)", labelGu: "quintal (ક્વિન્ટલ)" },
+  { id: "bag", labelEn: "bag (Bags/Bori)", labelGu: "bag (બોરી/કોથળો)" },
+  { id: "gram", labelEn: "gram (Gram)", labelGu: "gram (ગ્રામ)" },
+  { id: "pcs", labelEn: "pcs (Pieces)", labelGu: "pcs (નંગ)" },
+  { id: "box", labelEn: "box (Box)", labelGu: "box (બોક્સ)" },
+];
+
+export function UnitSelector({
+  value,
+  onChange,
+  lang = "en",
+  className = "",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  lang?: "en" | "gu";
+  className?: string;
+}) {
+  const isStandard = STANDARD_UNITS.some(
+    (u) => u.id.toLowerCase() === (value || "").toLowerCase().trim()
+  );
+  const [customMode, setCustomMode] = useState(!isStandard && value !== "" && value !== "kg");
+
+  if (customMode) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={lang === "gu" ? "એકમ..." : "Unit..."}
+          className={`${className} min-w-[65px]`}
+          autoFocus
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setCustomMode(false);
+            onChange("kg");
+          }}
+          className="text-xs text-blue-600 hover:text-blue-800 p-0.5 font-bold cursor-pointer"
+          title={lang === "gu" ? "લિસ્ટમાંથી પસંદ કરો" : "Select from list"}
+        >
+          ↩
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <select
+      value={(value || "kg").toLowerCase()}
+      onChange={(e) => {
+        if (e.target.value === "__other__") {
+          setCustomMode(true);
+          onChange("");
+        } else {
+          onChange(e.target.value);
+        }
+      }}
+      className={className}
+    >
+      {STANDARD_UNITS.map((u) => (
+        <option key={u.id} value={u.id}>
+          {lang === "gu" ? u.labelGu : u.labelEn}
+        </option>
+      ))}
+      <option value="__other__">
+        {lang === "gu" ? "➕ અન્ય (Other - ટાઈપ કરવા)" : "➕ Other (Type manually)"}
+      </option>
+    </select>
   );
 }
 
@@ -453,16 +546,73 @@ export default function InvoiceForm({
                 placeholder="652172775440"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">{t("gstType")}</label>
-              <select
-                value={gstMode}
-                onChange={(e) => setGstMode(e.target.value as "cgst_sgst" | "igst")}
-                className={inputCls}
-              >
-                <option value="cgst_sgst">CGST + SGST (Intra-state)</option>
-                <option value="igst">IGST (Inter-state / Export)</option>
-              </select>
+
+            {/* ── GST Mode Selection with Clear Visual Hints ── */}
+            <div className="col-span-1 md:col-span-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100 mt-1">
+              <label className="block text-xs font-bold text-gray-800 mb-2 flex items-center justify-between">
+                <span>{t("gstType")}</span>
+                <span className="text-[11px] font-semibold text-blue-700">
+                  {lang === "gu" ? "💡 ગ્રાહકના લોકેશન મુજબ સાચો પ્રકાર પસંદ કરો" : "💡 Choose based on customer's state"}
+                </span>
+              </label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label
+                  className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    gstMode === "cgst_sgst"
+                      ? "bg-white border-blue-600 shadow-sm ring-2 ring-blue-100"
+                      : "bg-white/60 border-gray-200 hover:bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="gstMode"
+                    value="cgst_sgst"
+                    checked={gstMode === "cgst_sgst"}
+                    onChange={() => setGstMode("cgst_sgst")}
+                    className="mt-1 w-4 h-4 text-blue-600"
+                  />
+                  <div>
+                    <div className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                      <span>📍</span>
+                      {lang === "gu" ? "CGST + SGST (ગુજરાતમાં વેચાણ)" : "CGST + SGST (Within Gujarat)"}
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1 leading-snug">
+                      {lang === "gu"
+                        ? "જ્યારે ગ્રાહક ગુજરાતનો હોય (સ્થાનિક વેચાણ - Intra-State)"
+                        : "For sales to customers inside Gujarat (Local / Intra-State)"}
+                    </p>
+                  </div>
+                </label>
+
+                <label
+                  className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    gstMode === "igst"
+                      ? "bg-white border-blue-600 shadow-sm ring-2 ring-blue-100"
+                      : "bg-white/60 border-gray-200 hover:bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="gstMode"
+                    value="igst"
+                    checked={gstMode === "igst"}
+                    onChange={() => setGstMode("igst")}
+                    className="mt-1 w-4 h-4 text-blue-600"
+                  />
+                  <div>
+                    <div className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                      <span>🚚</span>
+                      {lang === "gu" ? "IGST (ગુજરાત બહાર / Export)" : "IGST (Outside Gujarat / Export)"}
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1 leading-snug">
+                      {lang === "gu"
+                        ? "જ્યારે ગ્રાહક બીજા રાજ્યનો હોય અથવા એક્સપોર્ટ કરતા હોવ (Inter-State)"
+                        : "For sales to customers in other states or international export"}
+                    </p>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -479,7 +629,7 @@ export default function InvoiceForm({
                   <th className="text-left py-2 px-1 text-xs font-medium text-gray-500">{t("product")}</th>
                   <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-28">{t("hsn")}</th>
                   <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-20">{t("qty")}</th>
-                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-16">{t("unit")}</th>
+                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-28">{t("unit")}</th>
                   <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-24">{t("rate")}</th>
                   <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-20">{t("gstPercent")}</th>
                   <th className="text-right py-2 px-1 text-xs font-medium text-gray-500 w-24">{t("amount")}</th>
@@ -529,12 +679,11 @@ export default function InvoiceForm({
                       />
                     </td>
                     <td className="py-2 px-1">
-                      <input
-                        type="text"
+                      <UnitSelector
                         value={item.unit}
-                        onChange={(e) => updateItem(idx, { unit: e.target.value })}
-                        placeholder="kg"
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        onChange={(val) => updateItem(idx, { unit: val })}
+                        lang={lang}
+                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
                       />
                     </td>
                     <td className="py-2 px-1">

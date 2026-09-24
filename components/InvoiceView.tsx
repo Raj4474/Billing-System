@@ -1,7 +1,7 @@
 "use client";
 
 import { formatINR, numberToWords } from "@/lib/utils";
-import { Eye, EyeOff, Pencil, X, Plus, Trash2, Check, ZoomIn, ZoomOut } from "lucide-react";
+import { Eye, EyeOff, Pencil, X, Plus, Trash2, Check, ZoomIn } from "lucide-react";
 import { useState, useTransition, useEffect } from "react";
 import {
   updateInvoiceCustomerAction,
@@ -9,6 +9,11 @@ import {
   updateInvoiceItemsAction,
   saveSettingsAction,
 } from "@/actions/invoices";
+import { searchProductsAction } from "@/actions/products";
+import { UnitSelector } from "@/components/InvoiceForm";
+
+const STORAGE_KEY_HIDDEN = "rupala_invoice_hidden_fields";
+const STORAGE_KEY_LANG = "rupala_invoice_modal_lang";
 
 function ActionCluster({
   isHidden,
@@ -182,17 +187,56 @@ export default function InvoiceView({
   const [grandTotal, setGrandTotal] = useState<string>(initialGrandTotal);
   const [amountInWords, setAmountInWords] = useState<string | null>(initialAmountInWords || null);
 
-  // Hidden fields state
+  // Persistent hidden fields state (across all bills)
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
-  const toggle = (key: string) => setHidden((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_HIDDEN);
+      if (saved) {
+        setHidden(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("Failed to load saved hidden fields", e);
+    }
+  }, []);
+
+  const toggle = (key: string) => {
+    setHidden((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(STORAGE_KEY_HIDDEN, JSON.stringify(next));
+      } catch (e) {
+        console.error("Failed to save hidden fields", e);
+      }
+      return next;
+    });
+  };
 
   // Zoom state (default 1.18 = 18% zoomed for father's view)
   const [zoomLevel, setZoomLevel] = useState<number>(1.18);
 
-  // Edit Modal State
+  // Edit Modal State & Language
   const [modal, setModal] = useState<ModalType>(null);
+  const [modalLang, setModalLang] = useState<"en" | "gu">("gu");
   const [isPending, startTransition] = useTransition();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedLang = localStorage.getItem(STORAGE_KEY_LANG) as "en" | "gu" | null;
+      if (savedLang === "en" || savedLang === "gu") {
+        setModalLang(savedLang);
+      }
+    } catch {}
+  }, []);
+
+  const handleModalLangChange = (l: "en" | "gu") => {
+    setModalLang(l);
+    try {
+      localStorage.setItem(STORAGE_KEY_LANG, l);
+    } catch {}
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -746,10 +790,12 @@ export default function InvoiceView({
         </div>
       </div>
 
-      {/* ── Modals for In-Place Field Editing ─────────────────────────────────── */}
+      {/* ── Modals for In-Place Field Editing with Language Switch ───────────── */}
       {modal && (
         <EditModalDialog
           modal={modal}
+          lang={modalLang}
+          onLangChange={handleModalLangChange}
           invoiceId={invoiceId}
           customer={customer}
           date={date}
@@ -766,7 +812,7 @@ export default function InvoiceView({
               if (invoiceId) await updateInvoiceCustomerAction(invoiceId, updated);
               setCustomer(updated);
               setModal(null);
-              showToast("Customer updated!");
+              showToast(modalLang === "gu" ? "ગ્રાહકની વિગત અપડેટ થઈ!" : "Customer updated!");
             });
           }}
           onSaveDate={(updatedDate) => {
@@ -774,7 +820,7 @@ export default function InvoiceView({
               if (invoiceId) await updateInvoiceMetaAction(invoiceId, { date: updatedDate });
               setDate(updatedDate);
               setModal(null);
-              showToast("Date updated!");
+              showToast(modalLang === "gu" ? "તારીખ અપડેટ થઈ!" : "Date updated!");
             });
           }}
           onSaveTransport={(updatedTransport) => {
@@ -782,7 +828,7 @@ export default function InvoiceView({
               if (invoiceId) await updateInvoiceMetaAction(invoiceId, { transport: updatedTransport });
               setTransport(updatedTransport);
               setModal(null);
-              showToast("Transport updated!");
+              showToast(modalLang === "gu" ? "ટ્રાન્સપોર્ટ નં. અપડેટ થયો!" : "Transport updated!");
             });
           }}
           onSaveEwayBill={(updatedEway) => {
@@ -790,7 +836,7 @@ export default function InvoiceView({
               if (invoiceId) await updateInvoiceMetaAction(invoiceId, { ewayBillNo: updatedEway });
               setEwayBillNo(updatedEway);
               setModal(null);
-              showToast("e-Way Bill updated!");
+              showToast(modalLang === "gu" ? "ઈ-વે બિલ નં. અપડેટ થયો!" : "e-Way Bill updated!");
             });
           }}
           onSaveNotes={(updatedNotes) => {
@@ -798,7 +844,7 @@ export default function InvoiceView({
               if (invoiceId) await updateInvoiceMetaAction(invoiceId, { notes: updatedNotes });
               setNotes(updatedNotes);
               setModal(null);
-              showToast("Notes updated!");
+              showToast(modalLang === "gu" ? "નોંધ અપડેટ થઈ!" : "Notes updated!");
             });
           }}
           onSaveBankDetails={(updatedBank) => {
@@ -806,7 +852,7 @@ export default function InvoiceView({
               await saveSettingsAction(updatedBank);
               setSettings((prev) => ({ ...prev, ...updatedBank }));
               setModal(null);
-              showToast("Bank details updated!");
+              showToast(modalLang === "gu" ? "બેંક વિગતો અપડેટ થઈ!" : "Bank details updated!");
             });
           }}
           onSaveTerms={(updatedTerms) => {
@@ -814,7 +860,7 @@ export default function InvoiceView({
               await saveSettingsAction({ termsAndConditions: updatedTerms });
               setSettings((prev) => ({ ...prev, termsAndConditions: updatedTerms }));
               setModal(null);
-              showToast("Terms updated!");
+              showToast(modalLang === "gu" ? "શરતો અપડેટ થઈ!" : "Terms updated!");
             });
           }}
           onSaveCompanyInfo={(updatedCompany) => {
@@ -822,7 +868,7 @@ export default function InvoiceView({
               await saveSettingsAction(updatedCompany);
               setSettings((prev) => ({ ...prev, ...updatedCompany }));
               setModal(null);
-              showToast("Company information updated!");
+              showToast(modalLang === "gu" ? "પેઢીની વિગતો અપડેટ થઈ!" : "Company details updated!");
             });
           }}
           onSaveItems={(updatedItems) => {
@@ -851,7 +897,7 @@ export default function InvoiceView({
                 setAmountInWords(res.amountInWords);
               }
               setModal(null);
-              showToast("Line items updated & recalculated!");
+              showToast(modalLang === "gu" ? "વસ્તુઓ અને બિલ અપડેટ થયું!" : "Line items updated & recalculated!");
             });
           }}
         />
@@ -864,6 +910,8 @@ export default function InvoiceView({
 
 function EditModalDialog({
   modal,
+  lang,
+  onLangChange,
   customer,
   date,
   transport,
@@ -885,6 +933,8 @@ function EditModalDialog({
   onSaveItems,
 }: {
   modal: ModalType;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   invoiceId?: string;
   customer: CustomerSnapshot;
   date: string;
@@ -928,6 +978,8 @@ function EditModalDialog({
         {modal.type === "customer" && (
           <CustomerEditForm
             customer={customer}
+            lang={lang}
+            onLangChange={onLangChange}
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveCustomer}
@@ -938,6 +990,8 @@ function EditModalDialog({
         {modal.type === "date" && (
           <DateEditForm
             date={date}
+            lang={lang}
+            onLangChange={onLangChange}
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveDate}
@@ -948,6 +1002,8 @@ function EditModalDialog({
         {modal.type === "transport" && (
           <TransportEditForm
             transport={transport}
+            lang={lang}
+            onLangChange={onLangChange}
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveTransport}
@@ -958,6 +1014,8 @@ function EditModalDialog({
         {modal.type === "ewayBill" && (
           <EwayBillEditForm
             ewayBillNo={ewayBillNo}
+            lang={lang}
+            onLangChange={onLangChange}
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveEwayBill}
@@ -968,6 +1026,8 @@ function EditModalDialog({
         {modal.type === "notes" && (
           <NotesEditForm
             notes={notes}
+            lang={lang}
+            onLangChange={onLangChange}
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveNotes}
@@ -978,6 +1038,8 @@ function EditModalDialog({
         {modal.type === "bankDetails" && (
           <BankDetailsEditForm
             settings={settings}
+            lang={lang}
+            onLangChange={onLangChange}
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveBankDetails}
@@ -988,6 +1050,8 @@ function EditModalDialog({
         {modal.type === "termsAndConditions" && (
           <TermsEditForm
             terms={settings.termsAndConditions || ""}
+            lang={lang}
+            onLangChange={onLangChange}
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveTerms}
@@ -998,6 +1062,8 @@ function EditModalDialog({
         {modal.type === "companyInfo" && (
           <CompanyInfoEditForm
             settings={settings}
+            lang={lang}
+            onLangChange={onLangChange}
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveCompanyInfo}
@@ -1008,6 +1074,8 @@ function EditModalDialog({
         {modal.type === "items" && (
           <LineItemsEditForm
             items={items}
+            lang={lang}
+            onLangChange={onLangChange}
             useIgst={useIgst}
             isPending={isPending}
             onClose={onClose}
@@ -1021,20 +1089,54 @@ function EditModalDialog({
 
 // ─── Modal Sub-Forms ─────────────────────────────────────────────────────────
 
-function ModalHeader({ title, onClose }: { title: string; onClose: () => void }) {
+function ModalHeader({
+  title,
+  lang,
+  onLangChange,
+  onClose,
+}: {
+  title: string;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
+  onClose: () => void;
+}) {
   return (
     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
       <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
         <Pencil className="w-4 h-4 text-blue-600" />
         {title}
       </h3>
-      <button
-        type="button"
-        onClick={onClose}
-        className="text-gray-400 hover:text-gray-700 p-1 rounded-lg transition-colors cursor-pointer"
-      >
-        <X size={18} />
-      </button>
+      <div className="flex items-center gap-3">
+        {/* Language selector in modal */}
+        <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 text-xs font-semibold shadow-2xs">
+          <button
+            type="button"
+            onClick={() => onLangChange("gu")}
+            className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
+              lang === "gu" ? "bg-blue-600 text-white font-bold" : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            ગુજરાતી
+          </button>
+          <button
+            type="button"
+            onClick={() => onLangChange("en")}
+            className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
+              lang === "en" ? "bg-blue-600 text-white font-bold" : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            English
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-700 p-1 rounded-lg transition-colors cursor-pointer"
+        >
+          <X size={18} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -1042,12 +1144,18 @@ function ModalHeader({ title, onClose }: { title: string; onClose: () => void })
 function ModalFooter({
   isPending,
   onClose,
-  submitLabel = "Save Changes",
+  lang = "en",
+  submitLabel,
 }: {
   isPending: boolean;
   onClose: () => void;
+  lang?: "en" | "gu";
   submitLabel?: string;
 }) {
+  const cancelText = lang === "gu" ? "રદ કરો" : "Cancel";
+  const defaultSubmitText = lang === "gu" ? "ફેરફારો સેવ કરો" : "Save Changes";
+  const savingText = lang === "gu" ? "સેવ થાય છે..." : "Saving...";
+
   return (
     <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
       <button
@@ -1056,14 +1164,14 @@ function ModalFooter({
         disabled={isPending}
         className="px-5 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
       >
-        Cancel
+        {cancelText}
       </button>
       <button
         type="submit"
         disabled={isPending}
         className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-sm transition-all disabled:opacity-60 cursor-pointer"
       >
-        {isPending ? "Saving..." : submitLabel}
+        {isPending ? savingText : submitLabel || defaultSubmitText}
       </button>
     </div>
   );
@@ -1071,11 +1179,15 @@ function ModalFooter({
 
 function CustomerEditForm({
   customer,
+  lang,
+  onLangChange,
   isPending,
   onClose,
   onSave,
 }: {
   customer: CustomerSnapshot;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   isPending: boolean;
   onClose: () => void;
   onSave: (c: CustomerSnapshot) => void;
@@ -1088,7 +1200,7 @@ function CustomerEditForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return alert("Customer name cannot be empty");
+    if (!name.trim()) return alert(lang === "gu" ? "ગ્રાહકનું નામ જરૂરી છે" : "Customer name is required");
     onSave({ name, address, phone, placeOfSupply, gstin });
   }
 
@@ -1097,11 +1209,16 @@ function CustomerEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <ModalHeader title="Edit Customer Details" onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "ગ્રાહકની વિગતો બદલો" : "Edit Customer Details"}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6 space-y-4">
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1">
-            Customer Name <span className="text-red-500">*</span>
+            {lang === "gu" ? "ગ્રાહકનું નામ" : "Customer Name"} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -1112,7 +1229,9 @@ function CustomerEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Address</label>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "સરનામું" : "Address"}
+          </label>
           <textarea
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -1122,7 +1241,9 @@ function CustomerEditForm({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Mobile No.</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              {lang === "gu" ? "મોબાઇલ નં." : "Mobile No."}
+            </label>
             <input
               type="tel"
               value={phone}
@@ -1131,7 +1252,9 @@ function CustomerEditForm({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Place of Supply</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              {lang === "gu" ? "સ્થળ (Place of Supply)" : "Place of Supply"}
+            </label>
             <input
               type="text"
               value={placeOfSupply}
@@ -1142,7 +1265,9 @@ function CustomerEditForm({
           </div>
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">GSTIN No.</label>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "GSTIN નં." : "GSTIN No."}
+          </label>
           <input
             type="text"
             value={gstin}
@@ -1152,18 +1277,22 @@ function CustomerEditForm({
           />
         </div>
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} />
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>
   );
 }
 
 function DateEditForm({
   date,
+  lang,
+  onLangChange,
   isPending,
   onClose,
   onSave,
 }: {
   date: string;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   isPending: boolean;
   onClose: () => void;
   onSave: (d: string) => void;
@@ -1172,15 +1301,22 @@ function DateEditForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!val) return alert("Date is required");
+    if (!val) return alert(lang === "gu" ? "તારીખ પસંદ કરો" : "Date is required");
     onSave(val);
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <ModalHeader title="Edit Invoice Date" onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "બિલની તારીખ બદલો" : "Edit Invoice Date"}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">Invoice Date</label>
+        <label className="block text-xs font-bold text-gray-700 mb-1">
+          {lang === "gu" ? "બિલની તારીખ" : "Invoice Date"}
+        </label>
         <input
           type="date"
           value={val}
@@ -1189,18 +1325,22 @@ function DateEditForm({
           required
         />
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} />
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>
   );
 }
 
 function TransportEditForm({
   transport,
+  lang,
+  onLangChange,
   isPending,
   onClose,
   onSave,
 }: {
   transport: string;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   isPending: boolean;
   onClose: () => void;
   onSave: (t: string) => void;
@@ -1214,9 +1354,16 @@ function TransportEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <ModalHeader title="Edit Transport / Vehicle No." onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "વાહન / ટ્રાન્સપોર્ટ નં. બદલો" : "Edit Transport / Vehicle No."}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">Transport / Vehicle No.</label>
+        <label className="block text-xs font-bold text-gray-700 mb-1">
+          {lang === "gu" ? "વાહન / ટ્રાન્સપોર્ટ નં." : "Transport / Vehicle No."}
+        </label>
         <input
           type="text"
           value={val}
@@ -1225,18 +1372,22 @@ function TransportEditForm({
           className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono"
         />
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} />
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>
   );
 }
 
 function EwayBillEditForm({
   ewayBillNo,
+  lang,
+  onLangChange,
   isPending,
   onClose,
   onSave,
 }: {
   ewayBillNo: string;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   isPending: boolean;
   onClose: () => void;
   onSave: (e: string) => void;
@@ -1250,9 +1401,16 @@ function EwayBillEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <ModalHeader title="Edit e-Way Bill No." onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "ઈ-વે બિલ નં. બદલો" : "Edit e-Way Bill No."}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">e-Way Bill No.</label>
+        <label className="block text-xs font-bold text-gray-700 mb-1">
+          {lang === "gu" ? "ઈ-વે બિલ નં." : "e-Way Bill No."}
+        </label>
         <input
           type="text"
           value={val}
@@ -1261,18 +1419,22 @@ function EwayBillEditForm({
           className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono"
         />
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} />
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>
   );
 }
 
 function NotesEditForm({
   notes,
+  lang,
+  onLangChange,
   isPending,
   onClose,
   onSave,
 }: {
   notes: string;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   isPending: boolean;
   onClose: () => void;
   onSave: (n: string) => void;
@@ -1286,29 +1448,40 @@ function NotesEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <ModalHeader title="Edit Notes" onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "નોંધ (Notes) બદલો" : "Edit Notes"}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">Invoice Note</label>
+        <label className="block text-xs font-bold text-gray-700 mb-1">
+          {lang === "gu" ? "બિલની નોંધ" : "Invoice Note"}
+        </label>
         <textarea
           value={val}
           onChange={(e) => setVal(e.target.value)}
           rows={3}
           className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium resize-none"
-          placeholder="Add any specific note for this bill..."
+          placeholder={lang === "gu" ? "બિલ માટે કોઈ ખાસ નોંધ લખો..." : "Add any specific note for this bill..."}
         />
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} />
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>
   );
 }
 
 function BankDetailsEditForm({
   settings,
+  lang,
+  onLangChange,
   isPending,
   onClose,
   onSave,
 }: {
   settings: CompanySettings;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   isPending: boolean;
   onClose: () => void;
   onSave: (b: { bankName?: string; bankAccount?: string; ifscCode?: string }) => void;
@@ -1327,10 +1500,17 @@ function BankDetailsEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <ModalHeader title="Edit Bank Details" onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "બેંકની વિગતો બદલો" : "Edit Bank Details"}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6 space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Bank Name</label>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "બેંકનું નામ" : "Bank Name"}
+          </label>
           <input
             type="text"
             value={bankName}
@@ -1340,7 +1520,9 @@ function BankDetailsEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Bank A/c No.</label>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "બેંક ખાતા નંબર" : "Bank A/c No."}
+          </label>
           <input
             type="text"
             value={bankAccount}
@@ -1350,7 +1532,9 @@ function BankDetailsEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">RTGS / IFSC Code</label>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "RTGS / IFSC કોડ" : "RTGS / IFSC Code"}
+          </label>
           <input
             type="text"
             value={ifscCode}
@@ -1360,18 +1544,22 @@ function BankDetailsEditForm({
           />
         </div>
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} />
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>
   );
 }
 
 function TermsEditForm({
   terms,
+  lang,
+  onLangChange,
   isPending,
   onClose,
   onSave,
 }: {
   terms: string;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   isPending: boolean;
   onClose: () => void;
   onSave: (t: string) => void;
@@ -1385,9 +1573,16 @@ function TermsEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <ModalHeader title="Edit Terms & Conditions" onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "નિયમો અને શરતો બદલો" : "Edit Terms & Conditions"}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">Terms & Conditions</label>
+        <label className="block text-xs font-bold text-gray-700 mb-1">
+          {lang === "gu" ? "નિયમો અને શરતો" : "Terms & Conditions"}
+        </label>
         <textarea
           value={val}
           onChange={(e) => setVal(e.target.value)}
@@ -1396,18 +1591,22 @@ function TermsEditForm({
           placeholder="1. Goods once sold will not be taken back..."
         />
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} />
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>
   );
 }
 
 function CompanyInfoEditForm({
   settings,
+  lang,
+  onLangChange,
   isPending,
   onClose,
   onSave,
 }: {
   settings: CompanySettings;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   isPending: boolean;
   onClose: () => void;
   onSave: (c: {
@@ -1436,10 +1635,17 @@ function CompanyInfoEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <ModalHeader title="Edit Company Information" onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "પેઢીની વિગતો બદલો" : "Edit Company Information"}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6 space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Company Name</label>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "પેઢીનું નામ" : "Company Name"}
+          </label>
           <input
             type="text"
             value={companyName}
@@ -1448,7 +1654,9 @@ function CompanyInfoEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Company Address</label>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "સરનામું" : "Company Address"}
+          </label>
           <textarea
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -1458,7 +1666,9 @@ function CompanyInfoEditForm({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Phone</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              {lang === "gu" ? "ફોન" : "Phone"}
+            </label>
             <input
               type="text"
               value={phone}
@@ -1467,7 +1677,9 @@ function CompanyInfoEditForm({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Email</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              {lang === "gu" ? "ઈમેલ" : "Email"}
+            </label>
             <input
               type="email"
               value={email}
@@ -1478,7 +1690,9 @@ function CompanyInfoEditForm({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">GSTIN No.</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              {lang === "gu" ? "GSTIN નં." : "GSTIN No."}
+            </label>
             <input
               type="text"
               value={gstin}
@@ -1487,7 +1701,9 @@ function CompanyInfoEditForm({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">MSME No.</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              {lang === "gu" ? "MSME નં." : "MSME No."}
+            </label>
             <input
               type="text"
               value={msmeNo}
@@ -1497,19 +1713,86 @@ function CompanyInfoEditForm({
           </div>
         </div>
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} />
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>
+  );
+}
+
+function ItemProductInput({
+  value,
+  onChange,
+  onSelectProduct,
+  lang,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSelectProduct: (p: { name: string; hsnCode: string | null; defaultUnit: string | null; defaultGst: string | null }) => void;
+  lang: "en" | "gu";
+}) {
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+
+  const fetchSuggestions = async (q: string) => {
+    const res = await searchProductsAction(q);
+    setSuggestions(res);
+    setOpen(res.length > 0);
+  };
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onFocus={() => fetchSuggestions(value)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          fetchSuggestions(e.target.value);
+        }}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+        placeholder={lang === "gu" ? "દા.ત. ચણા / સિંગદાણા..." : "Product name"}
+        className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 bg-white"
+        required
+      />
+      {open && (
+        <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+          {suggestions.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onMouseDown={() => {
+                onSelectProduct(s);
+                setOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors border-b last:border-b-0 border-gray-100 flex items-center justify-between text-xs cursor-pointer"
+            >
+              <span className="font-bold text-gray-900">{s.name}</span>
+              {(s.hsnCode || s.defaultGst) && (
+                <span className="text-[10px] text-gray-500 font-medium">
+                  {s.hsnCode ? `HSN: ${s.hsnCode}` : ""}
+                  {s.hsnCode && s.defaultGst ? " · " : ""}
+                  {s.defaultGst ? `GST: ${s.defaultGst}%` : ""}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
 function LineItemsEditForm({
   items: initialList,
+  lang,
+  onLangChange,
   useIgst,
   isPending,
   onClose,
   onSave,
 }: {
   items: InvoiceItem[];
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
   useIgst: boolean;
   isPending: boolean;
   onClose: () => void;
@@ -1549,7 +1832,7 @@ function LineItemsEditForm({
   }
 
   function removeRow(index: number) {
-    if (list.length <= 1) return alert("Must keep at least 1 item");
+    if (list.length <= 1) return alert(lang === "gu" ? "ઓછામાં ઓછી 1 વસ્તુ રાખવી જરૂરી છે" : "Must keep at least 1 item");
     setList((prev) =>
       prev.filter((_, i) => i !== index).map((row, i) => ({ ...row, srNo: i + 1 }))
     );
@@ -1566,101 +1849,123 @@ function LineItemsEditForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (list.every((i) => !i.productName.trim())) {
-      return alert("At least one product name is required.");
+      return alert(lang === "gu" ? "ઓછામાં ઓછું એક વસ્તુનું નામ લખવું જરૂરી છે" : "At least one product name is required.");
     }
     onSave(list);
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
-      <ModalHeader title="Edit Line Items & Rates" onClose={onClose} />
+      <ModalHeader
+        title={lang === "gu" ? "વસ્તુઓ અને ભાવ બદલો" : "Edit Line Items & Rates"}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
       <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
         <div className="space-y-3">
           {list.map((row, idx) => (
             <div
               key={idx}
-              className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2 relative"
+              className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl space-y-2.5 relative"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-500">Item #{idx + 1}</span>
+                <span className="text-xs font-bold text-gray-500">
+                  {lang === "gu" ? `વસ્તુ #${idx + 1}` : `Item #${idx + 1}`}
+                </span>
                 {list.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeRow(idx)}
                     className="text-red-500 hover:text-red-700 p-1 rounded transition-colors cursor-pointer"
-                    title="Remove item"
+                    title={lang === "gu" ? "આ વસ્તુ હટાવો" : "Remove item"}
                   >
                     <Trash2 size={14} />
                   </button>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-0.5">Product Name</label>
-                  <input
-                    type="text"
+                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                    {lang === "gu" ? "વસ્તુનું નામ" : "Product Name"}
+                  </label>
+                  <ItemProductInput
                     value={row.productName}
-                    onChange={(e) => updateRow(idx, { productName: e.target.value })}
-                    placeholder="Product name"
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500"
-                    required
+                    onChange={(v) => updateRow(idx, { productName: v })}
+                    onSelectProduct={(p) =>
+                      updateRow(idx, {
+                        productName: p.name,
+                        hsnCode: p.hsnCode || "",
+                        unit: p.defaultUnit || "kg",
+                        gstPercent: p.defaultGst || "0",
+                      })
+                    }
+                    lang={lang}
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-0.5">HSN/SAC</label>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                    {lang === "gu" ? "HSN કોડ" : "HSN/SAC"}
+                  </label>
                   <input
                     type="text"
                     value={row.hsnCode || ""}
                     onChange={(e) => updateRow(idx, { hsnCode: e.target.value })}
                     placeholder="HSN"
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 bg-white"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-0.5">Qty</label>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                    {lang === "gu" ? "માત્રા (Qty)" : "Qty"}
+                  </label>
                   <input
                     type="number"
                     step="0.001"
                     min="0"
                     value={row.quantity}
                     onChange={(e) => updateRow(idx, { quantity: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-0.5">Unit</label>
-                  <input
-                    type="text"
+                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                    {lang === "gu" ? "એકમ (Unit)" : "Unit"}
+                  </label>
+                  <UnitSelector
                     value={row.unit}
-                    onChange={(e) => updateRow(idx, { unit: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium"
-                    placeholder="kg"
-                    required
+                    onChange={(val) => updateRow(idx, { unit: val })}
+                    lang={lang}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-0.5">Rate (₹)</label>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                    {lang === "gu" ? "ભાવ (₹)" : "Rate (₹)"}
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
                     value={row.rate}
                     onChange={(e) => updateRow(idx, { rate: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 mb-0.5">GST %</label>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                    {lang === "gu" ? "GST %" : "GST %"}
+                  </label>
                   <select
                     value={row.gstPercent}
                     onChange={(e) => updateRow(idx, { gstPercent: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
                   >
                     <option value="0">0%</option>
                     <option value="5">5%</option>
@@ -1672,7 +1977,7 @@ function LineItemsEditForm({
               </div>
 
               <div className="text-right text-xs font-bold text-gray-800 pt-1">
-                Item Amount: ₹{formatINR(parseFloat(row.amount) || 0)}
+                {lang === "gu" ? "રકમ:" : "Item Amount:"} ₹{formatINR(parseFloat(row.amount) || 0)}
               </div>
             </div>
           ))}
@@ -1681,28 +1986,34 @@ function LineItemsEditForm({
         <button
           type="button"
           onClick={addRow}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors cursor-pointer"
         >
-          <Plus size={14} /> Add Another Item
+          <Plus size={14} />
+          {lang === "gu" ? "➕ બીજી વસ્તુ ઉમેરો" : "➕ Add Another Item"}
         </button>
 
         {/* Live Calculation Box */}
-        <div className="p-3 bg-gray-100 rounded-xl text-xs space-y-1 font-medium text-gray-700">
+        <div className="p-3.5 bg-gray-100 rounded-xl text-xs space-y-1 font-medium text-gray-700">
           <div className="flex justify-between">
-            <span>Subtotal:</span>
+            <span>{lang === "gu" ? "કુલ રકમ (Subtotal):" : "Subtotal:"}</span>
             <span>₹{formatINR(subtotal)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Total Tax:</span>
+            <span>{lang === "gu" ? "કુલ ટેક્સ:" : "Total Tax:"}</span>
             <span>₹{formatINR(totalTax)}</span>
           </div>
           <div className="flex justify-between font-bold text-gray-900 text-sm border-t border-gray-300 pt-1">
-            <span>Grand Total:</span>
+            <span>{lang === "gu" ? "કુલ રકમ (Grand Total):" : "Grand Total:"}</span>
             <span>₹{formatINR(grandTotal)}</span>
           </div>
         </div>
       </div>
-      <ModalFooter isPending={isPending} onClose={onClose} submitLabel="Save & Recalculate Bill" />
+      <ModalFooter
+        isPending={isPending}
+        onClose={onClose}
+        lang={lang}
+        submitLabel={lang === "gu" ? "સેવ કરો અને નવું બિલ ગણો" : "Save & Recalculate Bill"}
+      />
     </form>
   );
 }

@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/actions/auth";
-import { FileText, LayoutDashboard, Settings, LogOut } from "lucide-react";
+import { FileText, LayoutDashboard, Settings, LogOut, Package } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/bills", label: "Bills", icon: FileText },
+  { href: "/products", label: "Products", icon: Package },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

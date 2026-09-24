@@ -213,15 +213,35 @@ export async function searchCustomersAction(query: string) {
     .limit(8);
 }
 
-// ─── Product autocomplete ─────────────────────────────────────────────────────
-
-export async function searchProductsAction(query: string) {
-  if (!query || query.length < 1) return [];
+export async function searchProductsAction(query?: string) {
+  if (!query || query.trim().length === 0) {
+    return db
+      .select({
+        id: products.id,
+        name: products.name,
+        hsnCode: products.hsnCode,
+        defaultUnit: products.defaultUnit,
+        defaultRate: products.defaultRate,
+        defaultGst: products.defaultGst,
+      })
+      .from(products)
+      .orderBy(products.name)
+      .limit(15);
+  }
+  const q = `%${query.trim()}%`;
   return db
-    .select()
+    .select({
+      id: products.id,
+      name: products.name,
+      hsnCode: products.hsnCode,
+      defaultUnit: products.defaultUnit,
+      defaultRate: products.defaultRate,
+      defaultGst: products.defaultGst,
+    })
     .from(products)
-    .where(ilike(products.name, `%${query}%`))
-    .limit(8);
+    .where(or(ilike(products.name, q), ilike(products.hsnCode, q)))
+    .orderBy(products.name)
+    .limit(10);
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
