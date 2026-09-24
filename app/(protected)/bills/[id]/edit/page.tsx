@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getInvoiceByIdAction } from "@/actions/invoices";
+import { getProductsAction } from "@/actions/products";
 import InvoiceForm from "@/components/InvoiceForm";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -10,7 +11,10 @@ export default async function EditBillPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const invoice = await getInvoiceByIdAction(id);
+  const [invoice, products] = await Promise.all([
+    getInvoiceByIdAction(id),
+    getProductsAction(),
+  ]);
 
   if (!invoice) notFound();
 
@@ -39,6 +43,7 @@ export default async function EditBillPage({
       </div>
 
       <InvoiceForm
+        catalogProducts={products}
         initialInvoice={{
           id: invoice.id,
           invoiceNumber: invoice.invoiceNumber,

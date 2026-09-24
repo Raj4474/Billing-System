@@ -9,8 +9,9 @@ import {
   updateInvoiceItemsAction,
   saveSettingsAction,
 } from "@/actions/invoices";
-import { searchProductsAction } from "@/actions/products";
+import { getProductsAction } from "@/actions/products";
 import { UnitSelector } from "@/components/InvoiceForm";
+import { ProductSelector, CatalogProduct } from "@/components/ProductSelector";
 
 const STORAGE_KEY_HIDDEN = "rupala_invoice_hidden_fields";
 const STORAGE_KEY_LANG = "rupala_invoice_modal_lang";
@@ -140,6 +141,7 @@ type Props = {
   amountInWords?: string | null;
   notes?: string | null;
   settings: CompanySettings;
+  catalogProducts?: CatalogProduct[];
 };
 
 type ModalType =
@@ -170,6 +172,7 @@ export default function InvoiceView({
   amountInWords: initialAmountInWords,
   notes: initialNotes,
   settings: initialSettings,
+  catalogProducts = [],
 }: Props) {
   // ─── Local State for Live In-Place Updates ──────────────────────────────────
   const [customer, setCustomer] = useState<CustomerSnapshot>(initialCustomerSnapshot);
@@ -179,6 +182,17 @@ export default function InvoiceView({
   const [notes, setNotes] = useState<string>(initialNotes || "");
   const [items, setItems] = useState<InvoiceItem[]>(initialItems);
   const [settings, setSettings] = useState<CompanySettings>(initialSettings);
+  const [productsList, setProductsList] = useState<CatalogProduct[]>(catalogProducts || []);
+
+  useEffect(() => {
+    if (catalogProducts && catalogProducts.length > 0) {
+      setProductsList(catalogProducts);
+    } else {
+      getProductsAction().then((prods) => {
+        if (prods && prods.length > 0) setProductsList(prods);
+      });
+    }
+  }, [catalogProducts]);
 
   const [subtotal, setSubtotal] = useState<string>(initialSubtotal);
   const [cgst, setCgst] = useState<string>(initialCgst);
@@ -797,6 +811,7 @@ export default function InvoiceView({
           lang={modalLang}
           onLangChange={handleModalLangChange}
           invoiceId={invoiceId}
+          products={productsList}
           customer={customer}
           date={date}
           transport={transport}
@@ -912,6 +927,7 @@ function EditModalDialog({
   modal,
   lang,
   onLangChange,
+  products = [],
   customer,
   date,
   transport,
@@ -936,6 +952,7 @@ function EditModalDialog({
   lang: "en" | "gu";
   onLangChange: (l: "en" | "gu") => void;
   invoiceId?: string;
+  products?: CatalogProduct[];
   customer: CustomerSnapshot;
   date: string;
   transport: string;
@@ -1074,6 +1091,7 @@ function EditModalDialog({
         {modal.type === "items" && (
           <LineItemsEditForm
             items={items}
+            products={products}
             lang={lang}
             onLangChange={onLangChange}
             useIgst={useIgst}
@@ -1718,71 +1736,9 @@ function CompanyInfoEditForm({
   );
 }
 
-function ItemProductInput({
-  value,
-  onChange,
-  onSelectProduct,
-  lang,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  onSelectProduct: (p: { name: string; hsnCode: string | null; defaultUnit: string | null; defaultGst: string | null }) => void;
-  lang: "en" | "gu";
-}) {
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [open, setOpen] = useState(false);
-
-  const fetchSuggestions = async (q: string) => {
-    const res = await searchProductsAction(q);
-    setSuggestions(res);
-    setOpen(res.length > 0);
-  };
-
-  return (
-    <div className="relative">
-      <input
-        type="text"
-        value={value}
-        onFocus={() => fetchSuggestions(value)}
-        onChange={(e) => {
-          onChange(e.target.value);
-          fetchSuggestions(e.target.value);
-        }}
-        onBlur={() => setTimeout(() => setOpen(false), 200)}
-        placeholder={lang === "gu" ? "દા.ત. ચણા / સિંગદાણા..." : "Product name"}
-        className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 bg-white"
-        required
-      />
-      {open && (
-        <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
-          {suggestions.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onMouseDown={() => {
-                onSelectProduct(s);
-                setOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors border-b last:border-b-0 border-gray-100 flex items-center justify-between text-xs cursor-pointer"
-            >
-              <span className="font-bold text-gray-900">{s.name}</span>
-              {(s.hsnCode || s.defaultGst) && (
-                <span className="text-[10px] text-gray-500 font-medium">
-                  {s.hsnCode ? `HSN: ${s.hsnCode}` : ""}
-                  {s.hsnCode && s.defaultGst ? " · " : ""}
-                  {s.defaultGst ? `GST: ${s.defaultGst}%` : ""}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function LineItemsEditForm({
   items: initialList,
+  products = [],
   lang,
   onLangChange,
   useIgst,
@@ -1791,6 +1747,7 @@ function LineItemsEditForm({
   onSave,
 }: {
   items: InvoiceItem[];
+  products?: CatalogProduct[];
   lang: "en" | "gu";
   onLangChange: (l: "en" | "gu") => void;
   useIgst: boolean;
@@ -1890,18 +1847,21 @@ function LineItemsEditForm({
                   <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
                     {lang === "gu" ? "વસ્તુનું નામ" : "Product Name"}
                   </label>
-                  <ItemProductInput
+                  <ProductSelector
                     value={row.productName}
-                    onChange={(v) => updateRow(idx, { productName: v })}
+                    products={products}
                     onSelectProduct={(p) =>
                       updateRow(idx, {
                         productName: p.name,
-                        hsnCode: p.hsnCode || "",
-                        unit: p.defaultUnit || "kg",
-                        gstPercent: p.defaultGst || "0",
+                        hsnCode: p.hsnCode,
+                        unit: p.unit,
+                        gstPercent: p.gstPercent,
                       })
                     }
+                    onChangeCustomName={(v) => updateRow(idx, { productName: v })}
                     lang={lang}
+                    placeholder={lang === "gu" ? "દા.ત. ચણા / સિંગદાણા..." : "Product name"}
+                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 bg-white"
                   />
                 </div>
                 <div>

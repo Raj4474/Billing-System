@@ -132,22 +132,6 @@ export async function createInvoiceAction(input: CreateInvoiceInput) {
     }))
   );
 
-  // Learn products for autocomplete
-  for (const item of input.items) {
-    if (item.productName.trim()) {
-      await db
-        .insert(products)
-        .values({
-          name: item.productName.trim(),
-          hsnCode: item.hsnCode,
-          defaultUnit: item.unit,
-          defaultRate: String(item.rate),
-          defaultGst: String(item.gstPercent),
-        })
-        .onConflictDoNothing();
-    }
-  }
-
   revalidatePath("/bills");
   redirect(`/bills/${invoice.id}`);
 }
@@ -382,22 +366,6 @@ export async function updateInvoiceItemsAction(
       amountInWords,
     })
     .where(eq(invoices.id, invoiceId));
-
-  // Autocomplete learning
-  for (const item of validItems) {
-    if (item.productName.trim()) {
-      await db
-        .insert(products)
-        .values({
-          name: item.productName.trim(),
-          hsnCode: item.hsnCode,
-          defaultUnit: item.unit,
-          defaultRate: String(item.rate),
-          defaultGst: String(item.gstPercent),
-        })
-        .onConflictDoNothing();
-    }
-  }
 
   revalidatePath(`/bills/${invoiceId}`);
   revalidatePath("/bills");

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getInvoiceByIdAction, getSettingsAction } from "@/actions/invoices";
+import { getProductsAction } from "@/actions/products";
 import InvoiceView from "@/components/InvoiceView";
 import PrintButton from "@/components/PrintButton";
 import Link from "next/link";
@@ -11,9 +12,10 @@ export default async function BillDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [invoice, settings] = await Promise.all([
+  const [invoice, settings, products] = await Promise.all([
     getInvoiceByIdAction(id),
     getSettingsAction(),
+    getProductsAction(),
   ]);
 
   if (!invoice) notFound();
@@ -64,6 +66,7 @@ export default async function BillDetailPage({
         date={invoice.date}
         transport={invoice.transport}
         ewayBillNo={invoice.ewayBillNo}
+        catalogProducts={products}
         customerSnapshot={snap}
         items={invoice.items.map((item) => ({
           srNo: item.srNo,

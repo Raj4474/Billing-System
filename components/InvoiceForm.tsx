@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { createInvoiceAction, updateFullInvoiceAction, searchCustomersAction, searchProductsAction } from "@/actions/invoices";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { createInvoiceAction, updateFullInvoiceAction, searchCustomersAction } from "@/actions/invoices";
+import { getProductsAction } from "@/actions/products";
+import { ProductSelector, CatalogProduct } from "./ProductSelector";
 import { Plus, Trash2 } from "lucide-react";
 
 type LineItem = {
@@ -279,13 +281,27 @@ type InitialInvoice = {
 export default function InvoiceForm({
   defaultInvoiceNumber,
   initialInvoice,
+  catalogProducts = [],
 }: {
   defaultInvoiceNumber?: string;
   initialInvoice?: InitialInvoice;
+  catalogProducts?: CatalogProduct[];
 }) {
   const isEditing = !!initialInvoice;
   const [lang, setLang] = useState<Lang>("en");
   const t = (key: keyof typeof dict) => dict[key][lang];
+
+  const [productsList, setProductsList] = useState<CatalogProduct[]>(catalogProducts || []);
+
+  useEffect(() => {
+    if (catalogProducts && catalogProducts.length > 0) {
+      setProductsList(catalogProducts);
+    } else {
+      getProductsAction().then((prods) => {
+        if (prods && prods.length > 0) setProductsList(prods);
+      });
+    }
+  }, [catalogProducts]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -641,21 +657,21 @@ export default function InvoiceForm({
                   <tr key={idx}>
                     <td className="py-2 px-1 text-gray-400 text-xs">{item.srNo}</td>
                     <td className="py-2 px-1">
-                      <AutocompleteInput<ProductResult>
+                      <ProductSelector
                         value={item.productName}
-                        onChange={(v) => updateItem(idx, { productName: v })}
-                        onSelect={(p) =>
+                        products={productsList}
+                        onSelectProduct={(p) =>
                           updateItem(idx, {
                             productName: p.name,
-                            hsnCode: p.hsnCode ?? "",
-                            unit: p.defaultUnit ?? "kg",
-                            rate: p.defaultRate ?? "",
-                            gstPercent: p.defaultGst ?? "0",
+                            hsnCode: p.hsnCode,
+                            unit: p.unit,
+                            gstPercent: p.gstPercent,
                           })
                         }
-                        onSearch={searchProductsAction}
+                        onChangeCustomName={(v) => updateItem(idx, { productName: v })}
+                        lang={lang}
                         placeholder={t("productName")}
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
                       />
                     </td>
                     <td className="py-2 px-1">
