@@ -1923,7 +1923,7 @@ function LineItemsEditForm({
                     {lang === "gu" ? "GST %" : "GST %"}
                   </label>
                   <select
-                    value={row.gstPercent}
+                    value={String(parseFloat(row.gstPercent || "0"))}
                     onChange={(e) => updateRow(idx, { gstPercent: e.target.value })}
                     className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
                   >

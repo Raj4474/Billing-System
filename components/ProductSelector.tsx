@@ -46,17 +46,14 @@ export function ProductSelector({
     return !matchingProduct && Boolean(value && value.trim());
   });
 
-  // Sync if value changes externally or products list loads
+  // Only auto-switch out of custom mode if value externally changed to match a catalog product
   useEffect(() => {
-    if (!value || !value.trim()) {
-      // Empty product name can start in dropdown mode
-      setCustomMode(false);
-    } else {
+    if (value && value.trim()) {
       const match = products.find(
         (p) => p.name.trim().toLowerCase() === value.trim().toLowerCase()
       );
-      if (!match) {
-        setCustomMode(true);
+      if (match) {
+        setCustomMode(false);
       }
     }
   }, [value, products]);
@@ -70,10 +67,10 @@ export function ProductSelector({
           onChange={(e) => onChangeCustomName(e.target.value)}
           placeholder={
             placeholder ||
-            (lang === "gu" ? "વસ્તુનું નામ લખો..." : "Type product name...")
+            (lang === "gu" ? "વસ્તુનું નામ લખો..." : "Type custom product name...")
           }
           className={`${className} flex-1`}
-          autoFocus={autoFocus}
+          autoFocus={autoFocus || true}
           required
         />
         <button
@@ -105,11 +102,16 @@ export function ProductSelector({
         } else {
           const selected = products.find((p) => p.id === val);
           if (selected) {
+            // Clean up GST string (e.g. "18.00" -> "18", "5.00" -> "5")
+            const numGst = parseFloat(selected.defaultGst || "0");
+            const cleanGst = isNaN(numGst) ? "0" : String(numGst);
+
+            setCustomMode(false);
             onSelectProduct({
               name: selected.name,
               hsnCode: selected.hsnCode || "",
               unit: selected.defaultUnit || "kg",
-              gstPercent: selected.defaultGst || "0",
+              gstPercent: cleanGst,
             });
           }
         }
@@ -120,9 +122,11 @@ export function ProductSelector({
         {lang === "gu" ? "-- વસ્તુ પસંદ કરો --" : "-- Select Product --"}
       </option>
       {products.map((p) => {
+        const numGst = parseFloat(p.defaultGst || "0");
+        const cleanGst = isNaN(numGst) ? "0" : String(numGst);
         const meta = [
           p.hsnCode ? `HSN: ${p.hsnCode}` : "",
-          p.defaultGst ? `${p.defaultGst}% GST` : "",
+          p.defaultGst ? `${cleanGst}% GST` : "",
         ]
           .filter(Boolean)
           .join(" · ");

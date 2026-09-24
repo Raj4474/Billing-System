@@ -715,7 +715,7 @@ export default function InvoiceForm({
                     </td>
                     <td className="py-2 px-1">
                       <select
-                        value={item.gstPercent}
+                        value={String(parseFloat(item.gstPercent || "0"))}
                         onChange={(e) => updateItem(idx, { gstPercent: e.target.value })}
                         className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
                       >

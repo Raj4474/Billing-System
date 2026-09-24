@@ -55,7 +55,10 @@ export default async function BillDetailPage({
             <Pencil className="w-4 h-4 text-blue-600" />
             Edit Bill
           </Link>
-          <PrintButton />
+          <PrintButton
+            invoiceNumber={invoice.invoiceNumber}
+            customerName={snap?.name}
+          />
         </div>
       </div>
 

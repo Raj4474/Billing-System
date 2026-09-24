@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getSettingsAction, saveSettingsAction } from "@/actions/invoices";
+import {
+  pickSaveDirectory,
+  getSavedDirectoryName,
+  clearSavedDirectoryHandle,
+  isDirectoryPickerSupported,
+} from "@/lib/pdfStorage";
+import { FolderOpen, Trash2, Check, RefreshCw } from "lucide-react";
 
 type Settings = Awaited<ReturnType<typeof getSettingsAction>>;
 
@@ -22,6 +29,31 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
 
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [folderName, setFolderName] = useState<string | null>(null);
+  const [isSupported, setIsSupported] = useState(false);
+  const [folderMsg, setFolderMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsSupported(isDirectoryPickerSupported());
+    const savedName = getSavedDirectoryName();
+    if (savedName) setFolderName(savedName);
+  }, []);
+
+  async function handleSelectFolder() {
+    const res = await pickSaveDirectory();
+    if (res.name) {
+      setFolderName(res.name);
+      setFolderMsg(`સેવ ફોલ્ડર સફળતાપૂર્વક સેટ થયું: ${res.name}`);
+      setTimeout(() => setFolderMsg(null), 4000);
+    }
+  }
+
+  async function handleResetFolder() {
+    await clearSavedDirectoryHandle();
+    setFolderName(null);
+    setFolderMsg("ફોલ્ડર રીસેટ થયું");
+    setTimeout(() => setFolderMsg(null), 3000);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,6 +128,68 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
           placeholder="Enter your standard T&C…"
         />
         <p className="text-xs text-gray-400 mt-1">Leave blank to use default terms.</p>
+      </div>
+
+      {/* PDF Save Location */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold text-gray-800 text-base">
+              PDF Save Location (કમ્પ્યુટરમાં બિલ સેવ કરવાનું ફોલ્ડર)
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Select a folder once on your computer (e.g. Desktop &gt; Bills). All future bill PDFs will be saved directly into this folder with proper bill numbers and no duplicate copies.
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <FolderOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 font-medium">Current Folder / હાલનું ફોલ્ડર:</div>
+              <div className="text-sm font-bold text-gray-900">
+                {folderName ? (
+                  <span className="text-blue-700 flex items-center gap-1.5">
+                    📁 {folderName} <span className="text-xs font-normal text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Active</span>
+                  </span>
+                ) : (
+                  <span className="text-gray-400 font-normal">કોઈ ફોલ્ડર પસંદ કરેલ નથી (Downloads ફોલ્ડરમાં ડાઉનલોડ થશે)</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSelectFolder}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span>{folderName ? "ફોલ્ડર બદલો (Change)" : "ફોલ્ડર પસંદ કરો (Select Folder)"}</span>
+            </button>
+            {folderName && (
+              <button
+                type="button"
+                onClick={handleResetFolder}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                title="Reset folder setting"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {folderMsg && (
+          <div className="flex items-center gap-1.5 text-xs text-green-700 font-bold bg-green-50 p-2.5 rounded-xl border border-green-200">
+            <Check className="w-4 h-4" />
+            <span>{folderMsg}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-3 pb-8">
