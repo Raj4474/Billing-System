@@ -1,11 +1,13 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getInvoiceByIdAction, getSettingsAction } from "@/actions/invoices";
 import { getProductsAction } from "@/actions/products";
 import InvoiceView from "@/components/InvoiceView";
 import PrintButton from "@/components/PrintButton";
 import DeleteBillButton from "@/components/DeleteBillButton";
 import Link from "next/link";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function BillDetailPage({
   params,
@@ -26,6 +28,29 @@ export default async function BillDetailPage({
 
   if (!invoice) notFound();
 
+  // Soft-deleted bill — show a clear message with recovery link
+  if (invoice.isDeleted) {
+    return (
+      <div className="p-8 max-w-lg mx-auto mt-16 text-center space-y-4">
+        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+          <Trash2 className="w-7 h-7 text-red-500" />
+        </div>
+        <h1 className="text-2xl font-black text-gray-900">Bill Deleted</h1>
+        <p className="text-gray-600">
+          Bill <span className="font-mono font-bold">{invoice.invoiceNumber}</span> has been deleted.
+          It can be recovered from the Deleted Bills page.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Link href="/bills" className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors">
+            ← All Bills
+          </Link>
+          <Link href="/bills/deleted" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors">
+            Go to Deleted Bills
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const snap = invoice.customerSnapshot as {
     name: string;

@@ -3,6 +3,8 @@ import { ArrowLeft, Trash2, Info } from "lucide-react";
 import { getDeletedInvoicesAction } from "@/actions/invoices";
 import DeletedBillsClient from "@/components/DeletedBillsClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function DeletedBillsPage() {
   const deletedRaw = await getDeletedInvoicesAction();
 

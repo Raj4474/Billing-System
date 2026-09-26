@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
 import BillsSearch from "@/components/BillsSearch";
 
+// Always render fresh from DB
+export const dynamic = "force-dynamic";
+
 async function getAllInvoices() {
   return db
     .select({

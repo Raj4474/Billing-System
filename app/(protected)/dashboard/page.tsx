@@ -3,6 +3,10 @@ import { db } from "@/lib/db";
 import { invoices } from "@/lib/schema";
 import { desc, eq } from "drizzle-orm";
 import { formatINR } from "@/lib/utils";
+
+// Always render fresh from DB — never serve a static snapshot
+export const dynamic = "force-dynamic";
+
 import {
   Plus,
   Receipt,
