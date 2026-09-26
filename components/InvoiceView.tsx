@@ -364,9 +364,15 @@ export default function InvoiceView({
               {toastMessage}
             </span>
           )}
-          <span className="text-gray-500 font-medium text-xs">
-            Hover field: <span className="font-bold text-gray-700">👁️ Hide</span> |{" "}
-            <span className="font-bold text-blue-600">✏️ Edit</span>
+          <span className="text-gray-500 font-medium text-xs flex items-center gap-1.5">
+            <span>Hover field:</span>
+            <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-700">
+              <Eye className="w-3 h-3 text-gray-600" /> Hide
+            </span>
+            <span>|</span>
+            <span className="inline-flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded font-bold text-blue-700">
+              <Pencil className="w-3 h-3 text-blue-600" /> Edit
+            </span>
           </span>
         </div>
       </div>
@@ -2078,7 +2084,7 @@ function LineItemsEditForm({
           className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors cursor-pointer"
         >
           <Plus size={14} />
-          {lang === "gu" ? "➕ બીજી વસ્તુ ઉમેરો" : "➕ Add Another Item"}
+          {lang === "gu" ? "બીજી વસ્તુ ઉમેરો" : "Add Another Item"}
         </button>
 
         {/* Live Calculation Box */}

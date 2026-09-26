@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Product, createProductAction, updateProductAction, deleteProductAction } from "@/actions/products";
 import { UnitSelector } from "@/components/InvoiceForm";
-import { Plus, Search, Pencil, Trash2, X, Package, Check } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, X, Package, Check, Info } from "lucide-react";
 
 const dict = {
   products: { en: "Products", gu: "વસ્તુઓ (પ્રોડક્ટ્સ)" },
@@ -20,8 +20,8 @@ const dict = {
   standardUnit: { en: "Standard Unit", gu: "સામાન્ય એકમ (Unit)" },
   gstPercent: { en: "GST Rate (%)", gu: "GST નો ટકા (%)" },
   noRateNote: {
-    en: "💡 No price needed here. Market price/rate is entered when creating each bill.",
-    gu: "💡 અહીં ભાવ રાખવાની જરૂર નથી. બિલ બનાવતી વખતે તે દિવસનો ભાવ લખાશે.",
+    en: "No price needed here. Market price/rate is entered when creating each bill.",
+    gu: "અહીં ભાવ રાખવાની જરૂર નથી. બિલ બનાવતી વખતે તે દિવસનો ભાવ લખાશે.",
   },
   actions: { en: "Actions", gu: "ક્રિયાઓ" },
   save: { en: "Save Product", gu: "પ્રોડક્ટ સેવ કરો" },
@@ -363,8 +363,9 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
               </div>
 
               {/* Note about price */}
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed font-medium">
-                {t("noRateNote")}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed font-medium flex items-center gap-2">
+                <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>{t("noRateNote")}</span>
               </div>
 
               {/* Modal Footer */}

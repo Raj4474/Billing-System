@@ -153,7 +153,9 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
               <div className="text-sm font-bold text-gray-900">
                 {folderName ? (
                   <span className="text-blue-700 flex items-center gap-1.5">
-                    📁 {folderName} <span className="text-xs font-normal text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Active</span>
+                    <FolderOpen className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>{folderName}</span>
+                    <span className="text-xs font-normal text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Active</span>
                   </span>
                 ) : (
                   <span className="text-gray-400 font-normal">કોઈ ફોલ્ડર પસંદ કરેલ નથી (Downloads ફોલ્ડરમાં ડાઉનલોડ થશે)</span>
@@ -201,7 +203,10 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
           {saving ? "Saving…" : "Save Settings"}
         </button>
         {saved && (
-          <span className="text-sm text-green-600 font-medium">✓ Saved!</span>
+          <span className="inline-flex items-center gap-1.5 text-sm text-green-600 font-bold">
+            <Check className="w-4 h-4" />
+            <span>Saved!</span>
+          </span>
         )}
       </div>
     </form>

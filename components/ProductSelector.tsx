@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Undo2 } from "lucide-react";
 
 export type CatalogProduct = {
   id: string;
@@ -82,7 +83,7 @@ export function ProductSelector({
           className="shrink-0 px-2 py-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition-colors cursor-pointer flex items-center gap-1"
           title={lang === "gu" ? "લિસ્ટમાંથી પસંદ કરો" : "Select from catalog list"}
         >
-          <span>↩</span>
+          <Undo2 className="w-3.5 h-3.5" />
           <span className="text-[11px]">{lang === "gu" ? "લિસ્ટ" : "List"}</span>
         </button>
       </div>
@@ -139,8 +140,8 @@ export function ProductSelector({
       })}
       <option value="__other__" className="font-bold text-blue-700">
         {lang === "gu"
-          ? "➕ અન્ય (Other - નવી વસ્તુ લખવા માટે)"
-          : "➕ Other (Type Custom Item)"}
+          ? "+ અન્ય (Other - નવી વસ્તુ લખવા માટે)"
+          : "+ Other (Type Custom Item)"}
       </option>
     </select>
   );

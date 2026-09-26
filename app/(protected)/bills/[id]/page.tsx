@@ -8,10 +8,15 @@ import { ArrowLeft, Pencil } from "lucide-react";
 
 export default async function BillDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ print?: string }>;
 }) {
   const { id } = await params;
+  const sParams = searchParams ? await searchParams : {};
+  const autoPrint = sParams?.print === "1";
+
   const [invoice, settings, products] = await Promise.all([
     getInvoiceByIdAction(id),
     getSettingsAction(),
@@ -19,6 +24,7 @@ export default async function BillDetailPage({
   ]);
 
   if (!invoice) notFound();
+
 
   const snap = invoice.customerSnapshot as {
     name: string;
@@ -58,6 +64,7 @@ export default async function BillDetailPage({
           <PrintButton
             invoiceNumber={invoice.invoiceNumber}
             customerName={snap?.name}
+            autoPrint={autoPrint}
           />
         </div>
       </div>

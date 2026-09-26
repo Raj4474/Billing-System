@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { createInvoiceAction, updateFullInvoiceAction, searchCustomersAction } from "@/actions/invoices";
 import { getProductsAction } from "@/actions/products";
 import { ProductSelector, CatalogProduct } from "./ProductSelector";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Undo2, MapPin, Truck, Info } from "lucide-react";
 
 type LineItem = {
   srNo: number;
@@ -157,10 +157,10 @@ export function UnitSelector({
             setCustomMode(false);
             onChange("kg");
           }}
-          className="text-xs text-blue-600 hover:text-blue-800 p-0.5 font-bold cursor-pointer"
+          className="text-xs text-blue-600 hover:text-blue-800 p-1 font-bold cursor-pointer inline-flex items-center"
           title={lang === "gu" ? "લિસ્ટમાંથી પસંદ કરો" : "Select from list"}
         >
-          ↩
+          <Undo2 className="w-3.5 h-3.5" />
         </button>
       </div>
     );
@@ -185,7 +185,7 @@ export function UnitSelector({
         </option>
       ))}
       <option value="__other__">
-        {lang === "gu" ? "➕ અન્ય (Other - ટાઈપ કરવા)" : "➕ Other (Type manually)"}
+        {lang === "gu" ? "+ અન્ય (Other - ટાઈપ કરવા)" : "+ Other (Type manually)"}
       </option>
     </select>
   );
@@ -601,8 +601,9 @@ export default function InvoiceForm({
             <div className="col-span-1 md:col-span-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100 mt-1">
               <label className="block text-xs font-bold text-gray-800 mb-2 flex items-center justify-between">
                 <span>{t("gstType")}</span>
-                <span className="text-[11px] font-semibold text-blue-700">
-                  {lang === "gu" ? "💡 ગ્રાહકના લોકેશન મુજબ સાચો પ્રકાર પસંદ કરો" : "💡 Choose based on customer's state"}
+                <span className="text-[11px] font-semibold text-blue-700 flex items-center gap-1">
+                  <Info className="w-3.5 h-3.5 shrink-0" />
+                  <span>{lang === "gu" ? "ગ્રાહકના રાજ્ય મુજબ સાચો પ્રકાર પસંદ કરો" : "Choose based on customer's state"}</span>
                 </span>
               </label>
 
@@ -624,7 +625,7 @@ export default function InvoiceForm({
                   />
                   <div>
                     <div className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                      <span>📍</span>
+                      <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
                       {lang === "gu" ? "CGST + SGST (ગુજરાતમાં વેચાણ)" : "CGST + SGST (Within Gujarat)"}
                     </div>
                     <p className="text-xs text-gray-600 mt-1 leading-snug">
@@ -652,7 +653,7 @@ export default function InvoiceForm({
                   />
                   <div>
                     <div className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                      <span>🚚</span>
+                      <Truck className="w-4 h-4 text-blue-600 shrink-0" />
                       {lang === "gu" ? "IGST (ગુજરાત બહાર / Export)" : "IGST (Outside Gujarat / Export)"}
                     </div>
                     <p className="text-xs text-gray-600 mt-1 leading-snug">
