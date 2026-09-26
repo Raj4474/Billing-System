@@ -1,7 +1,9 @@
 "use client";
 
 import { formatINR, numberToWords } from "@/lib/utils";
-import { Eye, EyeOff, Pencil, X, Plus, Trash2, Check, ZoomIn } from "lucide-react";
+import { Eye, EyeOff, Pencil, X, Plus, Trash2, Check, ZoomIn, ArrowLeft, Calendar, Info } from "lucide-react";
+import Link from "next/link";
+import PrintButton from "@/components/PrintButton";
 import { useState, useTransition, useEffect } from "react";
 import {
   updateInvoiceCustomerAction,
@@ -144,6 +146,7 @@ type Props = {
   notes?: string | null;
   settings: CompanySettings;
   catalogProducts?: CatalogProduct[];
+  autoPrint?: boolean;
 };
 
 type ModalType =
@@ -178,6 +181,7 @@ export default function InvoiceView({
   notes: initialNotes,
   settings: initialSettings,
   catalogProducts = [],
+  autoPrint = false,
 }: Props) {
   // ─── Local State for Live In-Place Updates ──────────────────────────────────
   const [customer, setCustomer] = useState<CustomerSnapshot>(initialCustomerSnapshot);
@@ -297,83 +301,153 @@ export default function InvoiceView({
 
   return (
     <div className="w-full">
-      {/* ── Top Zoom & Hint Bar (Screen Only) ─────────────────────────────────── */}
-      <div className="mb-6 max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-xs print:hidden">
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-gray-700 text-sm flex items-center gap-1.5">
-            <ZoomIn className="w-4 h-4 text-blue-600" />
-            Preview Size:
-          </span>
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
-            <button
-              type="button"
-              onClick={() => setZoomLevel((z) => Math.max(0.8, Math.round((z - 0.05) * 100) / 100))}
-              className="px-2.5 py-1 font-bold hover:bg-white rounded-lg text-gray-700 transition-colors cursor-pointer text-sm"
-              title="Zoom Out"
+      {/* ── Top Unified Control & Action Header (Hidden on Print) ─────────────── */}
+      <div className="max-w-5xl mx-auto mb-6 print:hidden space-y-3">
+        {/* Row 1: Navigation, Invoice Summary, and Primary Action Buttons */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Left: Back Link & Invoice Details */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/bills"
+              className="inline-flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors bg-gray-50 hover:bg-blue-50 px-3.5 py-2 rounded-xl border border-gray-200/80 cursor-pointer shadow-2xs"
+              title="Go back to Bills list"
             >
-              -
-            </button>
-            <span className="px-2 font-mono font-bold text-gray-900 text-sm min-w-[50px] text-center">
-              {Math.round(zoomLevel * 100)}%
+              <ArrowLeft className="w-4 h-4" />
+              <span>Bills</span>
+            </Link>
+
+            <span className="text-gray-300 text-lg font-light hidden sm:inline">/</span>
+
+            <span className="font-mono text-sm font-black bg-blue-50 text-blue-800 border border-blue-200/80 px-3 py-1 rounded-xl">
+              {invoiceNumber}
             </span>
-            <button
-              type="button"
-              onClick={() => setZoomLevel((z) => Math.min(1.5, Math.round((z + 0.05) * 100) / 100))}
-              className="px-2.5 py-1 font-bold hover:bg-white rounded-lg text-gray-700 transition-colors cursor-pointer text-sm"
-              title="Zoom In"
-            >
-              +
-            </button>
+
+            <div className="text-base font-black text-gray-900 truncate max-w-[200px] sm:max-w-[260px]" title={customer.name}>
+              {customer.name}
+            </div>
+
+            <span className="text-gray-300 text-lg font-light hidden sm:inline">·</span>
+
+            <span className="text-xs font-semibold text-gray-500 hidden sm:inline-flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-gray-400" />
+              {formattedDate}
+            </span>
+
+            {/* Total Amount Badge */}
+            <div className="bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-3 py-1 rounded-xl text-xs font-black">
+              ₹{formatINR(grandTotalNum)}
+            </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setZoomLevel(1.0)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                zoomLevel === 1.0 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              100%
-            </button>
-            <button
-              type="button"
-              onClick={() => setZoomLevel(1.18)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                zoomLevel === 1.18 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              118% (Default Large)
-            </button>
-            <button
-              type="button"
-              onClick={() => setZoomLevel(1.3)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                zoomLevel === 1.3 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              130%
-            </button>
+          {/* Right: Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {invoiceId && (
+              <Link
+                href={`/bills/${invoiceId}/edit`}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-bold rounded-xl transition-all shadow-2xs hover:-translate-y-0.5 cursor-pointer"
+                title="Edit Entire Bill Form"
+              >
+                <Pencil className="w-4 h-4 text-blue-600" />
+                <span>Edit Bill</span>
+              </Link>
+            )}
+
+            <PrintButton
+              invoiceNumber={invoiceNumber}
+              customerName={customer.name}
+              autoPrint={autoPrint}
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {toastMessage && (
-            <span className="flex items-center gap-1.5 bg-green-100 text-green-800 px-3 py-1 rounded-lg font-bold text-xs animate-fade-in">
-              <Check className="w-3.5 h-3.5" />
-              {toastMessage}
+        {/* Row 2: Secondary Bar (Preview Zoom Controls + In-Place Editing Guidance) */}
+        <div className="bg-white/95 px-5 py-2.5 rounded-xl border border-gray-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          {/* Left: Zoom Controls */}
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-gray-700 flex items-center gap-1.5">
+              <ZoomIn className="w-4 h-4 text-blue-600" />
+              <span>Preview Size:</span>
             </span>
-          )}
-          <span className="text-gray-500 font-medium text-xs flex items-center gap-1.5">
-            <span>Hover field:</span>
-            <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-700">
-              <Eye className="w-3 h-3 text-gray-600" /> Hide
+
+            <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+              <button
+                type="button"
+                onClick={() => setZoomLevel((z) => Math.max(0.8, Math.round((z - 0.05) * 100) / 100))}
+                className="px-2 py-0.5 font-bold hover:bg-white rounded text-gray-700 transition-colors cursor-pointer text-sm"
+                title="Zoom Out"
+              >
+                -
+              </button>
+              <span className="px-2 font-mono font-bold text-gray-900 text-xs min-w-[45px] text-center">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={() => setZoomLevel((z) => Math.min(1.5, Math.round((z + 0.05) * 100) / 100))}
+                className="px-2 py-0.5 font-bold hover:bg-white rounded text-gray-700 transition-colors cursor-pointer text-sm"
+                title="Zoom In"
+              >
+                +
+              </button>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setZoomLevel(1.0)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  zoomLevel === 1.0
+                    ? "bg-blue-600 text-white font-bold"
+                    : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200"
+                }`}
+              >
+                100%
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomLevel(1.18)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  zoomLevel === 1.18
+                    ? "bg-blue-600 text-white font-bold"
+                    : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200"
+                }`}
+              >
+                118% (Default Large)
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomLevel(1.3)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  zoomLevel === 1.3
+                    ? "bg-blue-600 text-white font-bold"
+                    : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200"
+                }`}
+              >
+                130%
+              </button>
+            </div>
+          </div>
+
+          {/* Right: In-place edit guidance & Toast Feedback */}
+          <div className="flex items-center gap-3">
+            {toastMessage && (
+              <span className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-800 px-3 py-1 rounded-lg font-bold text-xs animate-fade-in shadow-xs">
+                <Check className="w-3.5 h-3.5 text-green-600" />
+                <span>{toastMessage}</span>
+              </span>
+            )}
+            <span className="text-gray-500 font-medium text-xs flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <span>વિગત બદલવા:</span>
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold border border-blue-100">
+                <Pencil className="w-3 h-3 text-blue-600" /> Edit
+              </span>
+              <span>· છુપાવવા:</span>
+              <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold border border-gray-200">
+                <Eye className="w-3 h-3 text-gray-600" /> Hide
+              </span>
             </span>
-            <span>|</span>
-            <span className="inline-flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded font-bold text-blue-700">
-              <Pencil className="w-3 h-3 text-blue-600" /> Edit
-            </span>
-          </span>
+          </div>
         </div>
       </div>
 
