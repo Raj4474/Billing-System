@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import { getInvoiceByIdAction, getSettingsAction } from "@/actions/invoices";
 import { getProductsAction } from "@/actions/products";
 import InvoiceView from "@/components/InvoiceView";
+import PrintButton from "@/components/PrintButton";
+import DeleteBillButton from "@/components/DeleteBillButton";
+import Link from "next/link";
+import { ArrowLeft, Pencil } from "lucide-react";
 
 export default async function BillDetailPage({
   params,
@@ -32,12 +36,49 @@ export default async function BillDetailPage({
   };
 
   return (
-    <div className="p-4 md:p-8 bg-gray-100/60 min-h-screen print:bg-white print:p-0">
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen print:bg-white print:p-0">
+      {/* Toolbar — hidden on print */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 max-w-5xl mx-auto print:hidden bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/bills"
+            className="flex items-center gap-2 text-base font-bold text-gray-500 hover:text-blue-600 transition-colors bg-gray-50 hover:bg-blue-50 px-4 py-2.5 rounded-xl"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </Link>
+          <span className="text-gray-300 text-2xl font-light">|</span>
+          <span className="text-lg font-black text-gray-900 tracking-wide">
+            {invoice.invoiceNumber}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/bills/${id}/edit`}
+            className="flex items-center gap-2 px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 text-base font-bold rounded-xl transition-all shadow-2xs hover:-translate-y-0.5"
+            title="Edit Entire Bill Form"
+          >
+            <Pencil className="w-4 h-4 text-blue-600" />
+            Edit Bill
+          </Link>
+          <DeleteBillButton
+            invoiceId={invoice.id}
+            invoiceNumber={invoice.invoiceNumber}
+          />
+          <PrintButton
+            invoiceNumber={invoice.invoiceNumber}
+            customerName={snap?.name}
+            autoPrint={autoPrint}
+          />
+        </div>
+      </div>
+
+      {/* Invoice */}
       <InvoiceView
         invoiceId={invoice.id}
         invoiceNumber={invoice.invoiceNumber}
         date={invoice.date}
-        autoPrint={autoPrint}
         transport={invoice.transport}
         ewayBillNo={invoice.ewayBillNo}
         dalalName={invoice.dalalName}

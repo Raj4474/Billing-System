@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, date, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, date, timestamp, integer, jsonb, boolean } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 // ─── Customers ────────────────────────────────────────────────────────────────
@@ -43,6 +43,11 @@ export const invoices = pgTable("invoices", {
   amountInWords: text("amount_in_words"),
   notes: text("notes"),
   paymentStatus: text("payment_status").default("unpaid"), // unpaid / paid / partial
+  // ── Soft-delete support ────────────────────────────────────────────────
+  // If isDeleted=true the bill is hidden from the main UI but recoverable.
+  // Hard-deleted bills (most-recent only) are permanently removed from DB.
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

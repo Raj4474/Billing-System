@@ -154,6 +154,7 @@ export async function getInvoicesAction(search?: string) {
       createdAt: invoices.createdAt,
     })
     .from(invoices)
+    .where(eq(invoices.isDeleted, false))
     .orderBy(desc(invoices.createdAt));
 
   return query;
@@ -441,4 +442,113 @@ export async function updateFullInvoiceAction(
   revalidatePath(`/bills/${invoiceId}`);
   revalidatePath("/bills");
   redirect(`/bills/${invoiceId}`);
+}
+
+// ─── Smart Delete Invoice ─────────────────────────────────────────────────────
+//
+// Rules:
+//   • If the bill is the MOST RECENT active bill (highest invoiceCounter number)
+//     → Hard delete from DB + decrement the settings.invoiceCounter by 1
+//       so the next bill reuses the same number in the sequence.
+//   • Otherwise
+//     → Soft delete: set isDeleted=true, deletedAt=now()
+//       The bill number is permanently retired (not reused).
+//       The bill is hidden from the main UI but recoverable.
+//
+export async function deleteInvoiceAction(id: string): Promise<{ hardDeleted: boolean }> {
+  // Load the target invoice
+  const [target] = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.id, id))
+    .limit(1);
+
+  if (!target) throw new Error("Invoice not found");
+
+  // Find the most recent ACTIVE invoice (createdAt DESC)
+  const [latestActive] = await db
+    .select({ id: invoices.id, invoiceNumber: invoices.invoiceNumber })
+    .from(invoices)
+    .where(eq(invoices.isDeleted, false))
+    .orderBy(desc(invoices.createdAt))
+    .limit(1);
+
+  const isMostRecent = latestActive?.id === id;
+
+  if (isMostRecent) {
+    // ── Hard delete ──────────────────────────────────────────────────────
+    // invoice_items are cascade-deleted via FK constraint
+    await db.delete(invoices).where(eq(invoices.id, id));
+
+    // Decrement the settings counter so the next bill reuses this number
+    await db
+      .update(settings)
+      .set({
+        invoiceCounter: sql`GREATEST(0, ${settings.invoiceCounter} - 1)`,
+        updatedAt: new Date(),
+      })
+      .where(eq(settings.id, "default"));
+
+    revalidatePath("/bills");
+    revalidatePath("/dashboard");
+    return { hardDeleted: true };
+  } else {
+    // ── Soft delete ──────────────────────────────────────────────────────
+    await db
+      .update(invoices)
+      .set({ isDeleted: true, deletedAt: new Date() })
+      .where(eq(invoices.id, id));
+
+    revalidatePath("/bills");
+    revalidatePath("/dashboard");
+    return { hardDeleted: false };
+  }
+}
+
+// ─── Restore Soft-Deleted Invoice ────────────────────────────────────────────
+export async function restoreInvoiceAction(id: string): Promise<void> {
+  await db
+    .update(invoices)
+    .set({ isDeleted: false, deletedAt: null })
+    .where(eq(invoices.id, id));
+
+  revalidatePath("/bills");
+  revalidatePath("/bills/deleted");
+  revalidatePath("/dashboard");
+}
+
+// ─── Permanently Delete a Soft-Deleted Invoice ───────────────────────────────
+// Only callable from the Deleted Bills recovery page.
+// Bill number is permanently retired — counter is NOT decremented.
+export async function permanentlyDeleteInvoiceAction(id: string): Promise<void> {
+  const [target] = await db
+    .select({ isDeleted: invoices.isDeleted })
+    .from(invoices)
+    .where(eq(invoices.id, id))
+    .limit(1);
+
+  if (!target?.isDeleted) {
+    throw new Error("Can only permanently delete soft-deleted bills");
+  }
+
+  await db.delete(invoices).where(eq(invoices.id, id));
+
+  revalidatePath("/bills/deleted");
+  revalidatePath("/bills");
+}
+
+// ─── Get Soft-Deleted (Recoverable) Invoices ─────────────────────────────────
+export async function getDeletedInvoicesAction() {
+  return db
+    .select({
+      id: invoices.id,
+      invoiceNumber: invoices.invoiceNumber,
+      date: invoices.date,
+      customerSnapshot: invoices.customerSnapshot,
+      grandTotal: invoices.grandTotal,
+      deletedAt: invoices.deletedAt,
+    })
+    .from(invoices)
+    .where(eq(invoices.isDeleted, true))
+    .orderBy(desc(invoices.deletedAt));
 }

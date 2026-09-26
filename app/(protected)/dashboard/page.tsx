@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { invoices } from "@/lib/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { formatINR } from "@/lib/utils";
 import {
   Plus,
@@ -59,6 +59,7 @@ async function getDashboardData() {
       createdAt: invoices.createdAt,
     })
     .from(invoices)
+    .where(eq(invoices.isDeleted, false))
     .orderBy(desc(invoices.createdAt));
 
   const totalBills = allInvoices.length;
