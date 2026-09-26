@@ -120,54 +120,76 @@ export async function verifyHandlePermission(
   }
 }
 
+/**
+ * Generates a PDF blob from the invoice element.
+ *
+ * Uses an isolated off-screen 794px-wide container (A4 width at 96 dpi) so
+ * the canvas render matches the print layout exactly. Scale 4x ≈ 384 DPI.
+ * Existing files in the destination folder are OVERWRITTEN (no duplicates).
+ */
 export async function generateInvoicePdfBlob(elementId = "invoice-print"): Promise<Blob> {
   const element = document.getElementById(elementId) as HTMLElement | null;
   if (!element) throw new Error("Invoice element not found");
 
-  // Save original zoom and styles on live element
-  const prevZoom = element.style.zoom;
-  const prevTransform = element.style.transform;
-  const prevBoxShadow = element.style.boxShadow;
+  // ── Create an isolated, fixed off-screen 794px-wide rendering container ──
+  // This avoids any influence from the surrounding flex layout, zoom, or
+  // viewport-dependent widths on the canvas output.
+  const offscreen = document.createElement("div");
+  offscreen.style.cssText = [
+    "position:fixed",
+    "top:-99999px",
+    "left:0",
+    "width:794px",
+    "min-width:794px",
+    "max-width:794px",
+    "background:#ffffff",
+    "overflow:visible",
+    "zoom:1",
+    "transform:none",
+    "padding:0",
+    "margin:0",
+  ].join(";");
+  document.body.appendChild(offscreen);
 
   try {
-    // Reset live element zoom to 1 so getComputedStyle reads unscaled natural font metrics & layout
-    element.style.zoom = "1";
-    element.style.transform = "none";
-    element.style.boxShadow = "none";
+    // Deep-clone the invoice element into the offscreen container
+    const clone = element.cloneNode(true) as HTMLElement;
 
-    const canvas = await html2canvas(element, {
-      scale: 3, // 3x resolution = ~300 DPI print-shop clarity
+    // Override any screen-specific inline styles that were set by the UI
+    clone.style.zoom = "1";
+    clone.style.transform = "none";
+    clone.style.boxShadow = "none";
+    (clone.style as any).webkitBoxShadow = "none";
+    clone.style.width = "794px";
+    clone.style.minWidth = "794px";
+    clone.style.maxWidth = "794px";
+    clone.style.margin = "0";
+    clone.style.padding = "0";
+    clone.style.border = "1.5px solid #000000";
+    clone.style.backgroundColor = "#ffffff";
+    clone.style.overflow = "visible";
+
+    // Remove all interactive / screen-only elements from the clone
+    // (action clusters, hover pencil buttons, etc.)
+    clone.querySelectorAll("button").forEach((el) => el.remove());
+    clone.querySelectorAll("[class*='print:hidden']").forEach((el) => el.remove());
+    clone.querySelectorAll(".print-hidden").forEach((el) => el.remove());
+
+    offscreen.appendChild(clone);
+
+    const canvas = await html2canvas(clone, {
+      scale: 4,           // 4× → ~384 DPI — very sharp on A4
       useCORS: true,
+      allowTaint: false,
       logging: false,
       backgroundColor: "#ffffff",
-      ignoreElements: (el) => {
-        return (
-          el.classList.contains("print:hidden") ||
-          el.classList.contains("print-hidden") ||
-          el.tagName === "BUTTON"
-        );
-      },
-      onclone: (clonedDoc) => {
-        // Strip out any interactive buttons, hover action clusters, or toolbar controls
-        clonedDoc
-          .querySelectorAll("button, .print\\:hidden, .print-hidden")
-          .forEach((el) => el.remove());
-
-        const clonedEl = clonedDoc.getElementById(elementId);
-        if (clonedEl) {
-          clonedEl.style.zoom = "1";
-          clonedEl.style.transform = "none";
-          clonedEl.style.boxShadow = "none";
-          clonedEl.style.width = "794px";
-          clonedEl.style.maxWidth = "794px";
-          clonedEl.style.minWidth = "794px";
-          clonedEl.style.margin = "0 auto";
-          clonedEl.style.border = "1.5px solid #000000";
-        }
-      },
+      // Render from (0,0) of the offscreen container — no scroll offset needed
+      scrollX: 0,
+      scrollY: 0,
     });
 
     const imgData = canvas.toDataURL("image/png");
+
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -175,31 +197,22 @@ export async function generateInvoicePdfBlob(elementId = "invoice-print"): Promi
       compress: true,
     });
 
-    // Match exact @page { margin: 6mm 6mm } standard print margins
+    // Match the @page { margin: 6mm 6mm } from globals.css
     const marginMm = 6;
     const pageWidthMm = 210;
-    const targetWidthMm = pageWidthMm - marginMm * 2; // 198mm
+    const usableWidthMm = pageWidthMm - marginMm * 2; // 198 mm
 
     const imgProps = pdf.getImageProperties(imgData);
-    const targetHeightMm = (imgProps.height * targetWidthMm) / imgProps.width;
+    const usableHeightMm = (imgProps.height * usableWidthMm) / imgProps.width;
 
-    pdf.addImage(
-      imgData,
-      "PNG",
-      marginMm,
-      marginMm,
-      targetWidthMm,
-      targetHeightMm,
-      undefined,
-      "FAST"
-    );
+    pdf.addImage(imgData, "PNG", marginMm, marginMm, usableWidthMm, usableHeightMm, undefined, "FAST");
 
     return pdf.output("blob");
   } finally {
-    // Restore original zoom and styles on screen
-    element.style.zoom = prevZoom;
-    element.style.transform = prevTransform;
-    element.style.boxShadow = prevBoxShadow;
+    // Always remove the offscreen container
+    if (offscreen.parentNode) {
+      document.body.removeChild(offscreen);
+    }
   }
 }
 
@@ -215,47 +228,63 @@ export function getCleanInvoiceFilename(invoiceNumber: string, customerName?: st
   return cleanCust ? `${cleanInv}_${cleanCust}.pdf` : `${cleanInv}.pdf`;
 }
 
+/**
+ * Saves the invoice PDF to the user's pre-selected folder using the
+ * File System Access API (overwrites existing file — no duplicates).
+ *
+ * If no folder is configured and promptIfNoDir=true, the user is prompted to
+ * pick one. If promptIfNoDir=false and no folder is set, the function falls
+ * back to a browser download (or skips if skipFallback=true).
+ */
 export async function saveInvoicePdf({
   invoiceNumber,
   customerName,
   elementId = "invoice-print",
   promptIfNoDir = true,
+  skipFallback = false,
 }: {
   invoiceNumber: string;
   customerName?: string;
   elementId?: string;
   promptIfNoDir?: boolean;
+  /** When true, skips the browser-download fallback if no folder is set. */
+  skipFallback?: boolean;
 }): Promise<{
   success: boolean;
   folderName?: string;
   filename: string;
   directDownload?: boolean;
   cancelled?: boolean;
+  skipped?: boolean;
 }> {
   const filename = getCleanInvoiceFilename(invoiceNumber, customerName);
-  const blob = await generateInvoicePdfBlob(elementId);
 
   const supported = isDirectoryPickerSupported();
   let dirHandle = await getSavedDirectoryHandle();
 
   if (supported && !dirHandle && promptIfNoDir) {
     const pickResult = await pickSaveDirectory();
-    if (pickResult.cancelled) {
-      // User cancelled picker, fall back to browser download
-    } else if (pickResult.name) {
+    if (pickResult.name) {
       dirHandle = await getSavedDirectoryHandle();
     }
+    // If cancelled → dirHandle stays null → fallback below
   }
 
   if (dirHandle) {
     try {
       const hasPerm = await verifyHandlePermission(dirHandle, true);
       if (hasPerm) {
-        // Create/overwrite exact filename to eliminate duplicate copies on disk
+        // Generate the blob only if we have a valid folder handle
+        const blob = await generateInvoicePdfBlob(elementId);
+
+        // getFileHandle({ create: true }) → creates or GETS the existing file handle.
+        // createWritable() defaults to keepExistingData: false → TRUNCATES the file.
+        // Result: existing files are silently overwritten — no "(1)" or "copy" suffixes.
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
         const writable = await (fileHandle as any).createWritable();
         await writable.write(blob);
         await writable.close();
+
         return {
           success: true,
           folderName: dirHandle.name,
@@ -263,11 +292,21 @@ export async function saveInvoicePdf({
         };
       }
     } catch (err) {
-      console.warn("Direct folder write failed, falling back to download:", err);
+      console.warn("Direct folder write failed, falling back:", err);
     }
   }
 
-  // Fallback: direct browser download
+  // ── No folder / no permission ──
+  if (skipFallback) {
+    // Caller does not want a browser download — just report that save was skipped
+    return { success: false, filename, skipped: true };
+  }
+
+  // Browser download fallback (only when user explicitly requests Save PDF
+  // without a configured folder). Note: the browser may append "(1)" to avoid
+  // overwriting existing downloads. This is a browser behaviour we cannot
+  // override without the File System Access API.
+  const blob = await generateInvoicePdfBlob(elementId);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
