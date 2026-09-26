@@ -226,6 +226,10 @@ const dict = {
   date: { en: "Date", gu: "તારીખ" },
   transport: { en: "Transport / Vehicle No.", gu: "ટ્રાન્સપોર્ટ / વાહન નં." },
   ewayBillNo: { en: "e-Way Bill No. (optional)", gu: "ઈ-વે બિલ નં. (વૈકલ્પિક)" },
+  dalalName: { en: "Dalal Name (optional)", gu: "દલાલનું નામ (વૈકલ્પિક)" },
+  dalalContact: { en: "Dalal Contact No. (optional)", gu: "દલાલનો મોબાઈલ નં. (વૈકલ્પિક)" },
+  dalalPlaceholder: { en: "e.g. Ramesh Bhai", gu: "દા.ત. રમેશભાઈ" },
+  dalalContactPlaceholder: { en: "e.g. 98250XXXXX", gu: "દા.ત. 98250XXXXX" },
   gstType: { en: "GST Type", gu: "GST ના પ્રકાર" },
   items: { en: "Items", gu: "વસ્તુઓ" },
   product: { en: "Product", gu: "વસ્તુ" },
@@ -264,6 +268,8 @@ type InitialInvoice = {
   };
   transport?: string | null;
   ewayBillNo?: string | null;
+  dalalName?: string | null;
+  dalalContact?: string | null;
   items: {
     srNo: number;
     productName: string;
@@ -317,6 +323,8 @@ export default function InvoiceForm({
   const [date, setDate] = useState(initialInvoice?.date || today);
   const [transport, setTransport] = useState(initialInvoice?.transport || "");
   const [ewayBillNo, setEwayBillNo] = useState(initialInvoice?.ewayBillNo || "");
+  const [dalalName, setDalalName] = useState(initialInvoice?.dalalName || "");
+  const [dalalContact, setDalalContact] = useState(initialInvoice?.dalalContact || "");
   const [notes, setNotes] = useState(initialInvoice?.notes || "");
 
   // GST mode
@@ -401,6 +409,8 @@ export default function InvoiceForm({
       },
       transport: transport || undefined,
       ewayBillNo: ewayBillNo || undefined,
+      dalalName: dalalName || undefined,
+      dalalContact: dalalContact || undefined,
       items: items
         .filter((i) => i.productName.trim())
         .map((i) => ({
@@ -560,6 +570,30 @@ export default function InvoiceForm({
                 onChange={(e) => setEwayBillNo(e.target.value)}
                 className={inputCls}
                 placeholder="652172775440"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                {t("dalalName")}
+              </label>
+              <input
+                type="text"
+                value={dalalName}
+                onChange={(e) => setDalalName(e.target.value)}
+                className={inputCls}
+                placeholder={dict.dalalPlaceholder[lang]}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                {t("dalalContact")}
+              </label>
+              <input
+                type="text"
+                value={dalalContact}
+                onChange={(e) => setDalalContact(e.target.value)}
+                className={inputCls}
+                placeholder={dict.dalalContactPlaceholder[lang]}
               />
             </div>
 

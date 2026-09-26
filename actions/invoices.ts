@@ -34,6 +34,8 @@ export type CreateInvoiceInput = {
   customerSnapshot: CustomerSnapshot;
   transport?: string;
   ewayBillNo?: string;
+  dalalName?: string;
+  dalalContact?: string;
   items: InvoiceItem[];
   subtotal: number;
   cgst: number;
@@ -107,6 +109,8 @@ export async function createInvoiceAction(input: CreateInvoiceInput) {
       customerSnapshot: input.customerSnapshot,
       transport: input.transport,
       ewayBillNo: input.ewayBillNo,
+      dalalName: input.dalalName,
+      dalalContact: input.dalalContact,
       subtotal: String(input.subtotal),
       cgst: String(input.cgst),
       sgst: String(input.sgst),
@@ -288,6 +292,8 @@ export async function updateInvoiceMetaAction(
     date?: string;
     transport?: string;
     ewayBillNo?: string;
+    dalalName?: string;
+    dalalContact?: string;
     notes?: string;
   }
 ) {
@@ -402,6 +408,8 @@ export async function updateFullInvoiceAction(
       customerSnapshot: input.customerSnapshot,
       transport: input.transport,
       ewayBillNo: input.ewayBillNo,
+      dalalName: input.dalalName,
+      dalalContact: input.dalalContact,
       subtotal: String(input.subtotal),
       cgst: String(input.cgst),
       sgst: String(input.sgst),

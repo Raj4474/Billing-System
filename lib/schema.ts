@@ -33,6 +33,8 @@ export const invoices = pgTable("invoices", {
   customerSnapshot: jsonb("customer_snapshot").notNull(),
   transport: text("transport"),         // vehicle number (optional)
   ewayBillNo: text("eway_bill_no"),     // reference only (optional)
+  dalalName: text("dalal_name"),         // dalal name (optional)
+  dalalContact: text("dalal_contact"),   // dalal contact (optional)
   subtotal: numeric("subtotal", { precision: 14, scale: 2 }).notNull(),
   cgst: numeric("cgst", { precision: 14, scale: 2 }).default("0"),
   sgst: numeric("sgst", { precision: 14, scale: 2 }).default("0"),

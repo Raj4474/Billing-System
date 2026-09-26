@@ -131,6 +131,8 @@ type Props = {
   date: string;
   transport?: string | null;
   ewayBillNo?: string | null;
+  dalalName?: string | null;
+  dalalContact?: string | null;
   customerSnapshot: CustomerSnapshot;
   items: InvoiceItem[];
   subtotal: string;
@@ -150,6 +152,7 @@ type ModalType =
   | { type: "date" }
   | { type: "transport" }
   | { type: "ewayBill" }
+  | { type: "dalal" }
   | { type: "notes" }
   | { type: "items" }
   | { type: "bankDetails" }
@@ -162,6 +165,8 @@ export default function InvoiceView({
   date: initialDate,
   transport: initialTransport,
   ewayBillNo: initialEwayBillNo,
+  dalalName: initialDalalName,
+  dalalContact: initialDalalContact,
   customerSnapshot: initialCustomerSnapshot,
   items: initialItems,
   subtotal: initialSubtotal,
@@ -179,6 +184,8 @@ export default function InvoiceView({
   const [date, setDate] = useState<string>(initialDate);
   const [transport, setTransport] = useState<string>(initialTransport || "");
   const [ewayBillNo, setEwayBillNo] = useState<string>(initialEwayBillNo || "");
+  const [dalalName, setDalalName] = useState<string>(initialDalalName || "");
+  const [dalalContact, setDalalContact] = useState<string>(initialDalalContact || "");
   const [notes, setNotes] = useState<string>(initialNotes || "");
   const [items, setItems] = useState<InvoiceItem[]>(initialItems);
   const [settings, setSettings] = useState<CompanySettings>(initialSettings);
@@ -525,6 +532,26 @@ export default function InvoiceView({
                   <span className="font-bold">e-Way Bill No.</span>
                   <span>: {ewayBillNo || "—"}</span>
                 </ToggleWrapper>
+                <ToggleWrapper
+                  isHidden={hidden["dalalName"]}
+                  onToggle={() => toggle("dalalName")}
+                  onEdit={() => setModal({ type: "dalal" })}
+                  editTitle="Edit Dalal Details"
+                  className="grid grid-cols-[85px_1fr]"
+                >
+                  <span className="font-bold">Dalal</span>
+                  <span>: {dalalName || "—"}</span>
+                </ToggleWrapper>
+                <ToggleWrapper
+                  isHidden={hidden["dalalContact"]}
+                  onToggle={() => toggle("dalalContact")}
+                  onEdit={() => setModal({ type: "dalal" })}
+                  editTitle="Edit Dalal Contact"
+                  className="grid grid-cols-[85px_1fr]"
+                >
+                  <span className="font-bold">Dalal Contact</span>
+                  <span>: {dalalContact || "—"}</span>
+                </ToggleWrapper>
               </div>
             </div>
           </div>
@@ -734,7 +761,7 @@ export default function InvoiceView({
 
                 {useIgst ? (
                   <div className="flex justify-between">
-                    <span>Integrated Tax</span>
+                    <span>IGST</span>
                     <span className="flex gap-4">
                       <span className="w-14 text-right">{fullTaxRate}%</span>
                       <span className="w-24 text-right">{formatINR(igstVal)}</span>
@@ -743,14 +770,14 @@ export default function InvoiceView({
                 ) : (
                   <>
                     <div className="flex justify-between">
-                      <span>Central Tax</span>
+                      <span>CGST</span>
                       <span className="flex gap-4">
                         <span className="w-14 text-right">{halfTaxRate}%</span>
                         <span className="w-24 text-right">{formatINR(cgstVal)}</span>
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>State/UT Tax</span>
+                      <span>SGST</span>
                       <span className="flex gap-4">
                         <span className="w-14 text-right">{halfTaxRate}%</span>
                         <span className="w-24 text-right">{formatINR(sgstVal)}</span>
@@ -816,6 +843,8 @@ export default function InvoiceView({
           date={date}
           transport={transport}
           ewayBillNo={ewayBillNo}
+          dalalName={dalalName}
+          dalalContact={dalalContact}
           notes={notes}
           items={items}
           settings={settings}
@@ -852,6 +881,20 @@ export default function InvoiceView({
               setEwayBillNo(updatedEway);
               setModal(null);
               showToast(modalLang === "gu" ? "ઈ-વે બિલ નં. અપડેટ થયો!" : "e-Way Bill updated!");
+            });
+          }}
+          onSaveDalal={(updatedDalal) => {
+            startTransition(async () => {
+              if (invoiceId) {
+                await updateInvoiceMetaAction(invoiceId, {
+                  dalalName: updatedDalal.name,
+                  dalalContact: updatedDalal.contact,
+                });
+              }
+              setDalalName(updatedDalal.name);
+              setDalalContact(updatedDalal.contact);
+              setModal(null);
+              showToast(modalLang === "gu" ? "દલાલની વિગત અપડેટ થઈ!" : "Dalal details updated!");
             });
           }}
           onSaveNotes={(updatedNotes) => {
@@ -932,6 +975,8 @@ function EditModalDialog({
   date,
   transport,
   ewayBillNo,
+  dalalName,
+  dalalContact,
   notes,
   items,
   settings,
@@ -942,6 +987,7 @@ function EditModalDialog({
   onSaveDate,
   onSaveTransport,
   onSaveEwayBill,
+  onSaveDalal,
   onSaveNotes,
   onSaveBankDetails,
   onSaveTerms,
@@ -957,6 +1003,8 @@ function EditModalDialog({
   date: string;
   transport: string;
   ewayBillNo: string;
+  dalalName: string;
+  dalalContact: string;
   notes: string;
   items: InvoiceItem[];
   settings: CompanySettings;
@@ -967,6 +1015,7 @@ function EditModalDialog({
   onSaveDate: (d: string) => void;
   onSaveTransport: (t: string) => void;
   onSaveEwayBill: (e: string) => void;
+  onSaveDalal: (d: { name: string; contact: string }) => void;
   onSaveNotes: (n: string) => void;
   onSaveBankDetails: (b: { bankName?: string; bankAccount?: string; ifscCode?: string }) => void;
   onSaveTerms: (t: string) => void;
@@ -1036,6 +1085,19 @@ function EditModalDialog({
             isPending={isPending}
             onClose={onClose}
             onSave={onSaveEwayBill}
+          />
+        )}
+
+        {/* Dalal Modal */}
+        {modal.type === "dalal" && (
+          <DalalEditForm
+            dalalName={dalalName}
+            dalalContact={dalalContact}
+            lang={lang}
+            onLangChange={onLangChange}
+            isPending={isPending}
+            onClose={onClose}
+            onSave={onSaveDalal}
           />
         )}
 
@@ -1436,6 +1498,73 @@ function EwayBillEditForm({
           placeholder="652172775440"
           className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono"
         />
+      </div>
+      <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
+    </form>
+  );
+}
+
+function DalalEditForm({
+  dalalName,
+  dalalContact,
+  lang,
+  onLangChange,
+  isPending,
+  onClose,
+  onSave,
+}: {
+  dalalName: string;
+  dalalContact: string;
+  lang: "en" | "gu";
+  onLangChange: (l: "en" | "gu") => void;
+  isPending: boolean;
+  onClose: () => void;
+  onSave: (d: { name: string; contact: string }) => void;
+}) {
+  const [name, setName] = useState(dalalName || "");
+  const [contact, setContact] = useState(dalalContact || "");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    onSave({ name: name.trim(), contact: contact.trim() });
+  }
+
+  const inputCls =
+    "w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <ModalHeader
+        title={lang === "gu" ? "દલાલની વિગત બદલો" : "Edit Dalal Details"}
+        lang={lang}
+        onLangChange={onLangChange}
+        onClose={onClose}
+      />
+      <div className="p-6 space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "દલાલનું નામ" : "Dalal Name"}
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={lang === "gu" ? "દા.ત. રમેશભાઈ" : "e.g. Ramesh Bhai"}
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            {lang === "gu" ? "દલાલનો મોબાઈલ નં." : "Dalal Contact No."}
+          </label>
+          <input
+            type="text"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder={lang === "gu" ? "દા.ત. 98250XXXXX" : "e.g. 98250XXXXX"}
+            className={inputCls}
+          />
+        </div>
       </div>
       <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
     </form>

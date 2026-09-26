@@ -52,6 +52,8 @@ export default async function EditBillPage({
           customerSnapshot: snap,
           transport: invoice.transport,
           ewayBillNo: invoice.ewayBillNo,
+          dalalName: invoice.dalalName,
+          dalalContact: invoice.dalalContact,
           items: invoice.items.map((item) => ({
             srNo: item.srNo,
             productName: item.productName,

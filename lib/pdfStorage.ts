@@ -121,40 +121,86 @@ export async function verifyHandlePermission(
 }
 
 export async function generateInvoicePdfBlob(elementId = "invoice-print"): Promise<Blob> {
-  const element = document.getElementById(elementId);
+  const element = document.getElementById(elementId) as HTMLElement | null;
   if (!element) throw new Error("Invoice element not found");
 
-  const canvas = await html2canvas(element, {
-    scale: 2, // 2x for sharp print & vector clarity
-    useCORS: true,
-    logging: false,
-    backgroundColor: "#ffffff",
-    ignoreElements: (el) => el.classList.contains("print:hidden"),
-    onclone: (clonedDoc) => {
-      const clonedEl = clonedDoc.getElementById(elementId);
-      if (clonedEl) {
-        clonedEl.style.zoom = "1";
-        clonedEl.style.transform = "none";
-        clonedEl.style.boxShadow = "none";
-        clonedEl.style.width = "210mm";
-        clonedEl.style.maxWidth = "210mm";
-      }
-    },
-  });
+  // Save original zoom and styles on live element
+  const prevZoom = element.style.zoom;
+  const prevTransform = element.style.transform;
+  const prevBoxShadow = element.style.boxShadow;
 
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
+  try {
+    // Reset live element zoom to 1 so getComputedStyle reads unscaled natural font metrics & layout
+    element.style.zoom = "1";
+    element.style.transform = "none";
+    element.style.boxShadow = "none";
 
-  const pdfWidth = 210;
-  const imgProps = pdf.getImageProperties(imgData);
-  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const canvas = await html2canvas(element, {
+      scale: 3, // 3x resolution = ~300 DPI print-shop clarity
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      ignoreElements: (el) => {
+        return (
+          el.classList.contains("print:hidden") ||
+          el.classList.contains("print-hidden") ||
+          el.tagName === "BUTTON"
+        );
+      },
+      onclone: (clonedDoc) => {
+        // Strip out any interactive buttons, hover action clusters, or toolbar controls
+        clonedDoc
+          .querySelectorAll("button, .print\\:hidden, .print-hidden")
+          .forEach((el) => el.remove());
 
-  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-  return pdf.output("blob");
+        const clonedEl = clonedDoc.getElementById(elementId);
+        if (clonedEl) {
+          clonedEl.style.zoom = "1";
+          clonedEl.style.transform = "none";
+          clonedEl.style.boxShadow = "none";
+          clonedEl.style.width = "794px";
+          clonedEl.style.maxWidth = "794px";
+          clonedEl.style.minWidth = "794px";
+          clonedEl.style.margin = "0 auto";
+          clonedEl.style.border = "1.5px solid #000000";
+        }
+      },
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+    });
+
+    // Match exact @page { margin: 6mm 6mm } standard print margins
+    const marginMm = 6;
+    const pageWidthMm = 210;
+    const targetWidthMm = pageWidthMm - marginMm * 2; // 198mm
+
+    const imgProps = pdf.getImageProperties(imgData);
+    const targetHeightMm = (imgProps.height * targetWidthMm) / imgProps.width;
+
+    pdf.addImage(
+      imgData,
+      "PNG",
+      marginMm,
+      marginMm,
+      targetWidthMm,
+      targetHeightMm,
+      undefined,
+      "FAST"
+    );
+
+    return pdf.output("blob");
+  } finally {
+    // Restore original zoom and styles on screen
+    element.style.zoom = prevZoom;
+    element.style.transform = prevTransform;
+    element.style.boxShadow = prevBoxShadow;
+  }
 }
 
 export function getCleanInvoiceFilename(invoiceNumber: string, customerName?: string): string {

@@ -69,6 +69,8 @@ export default async function BillDetailPage({
         date={invoice.date}
         transport={invoice.transport}
         ewayBillNo={invoice.ewayBillNo}
+        dalalName={invoice.dalalName}
+        dalalContact={invoice.dalalContact}
         catalogProducts={products}
         customerSnapshot={snap}
         items={invoice.items.map((item) => ({
