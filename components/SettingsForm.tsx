@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getSettingsAction, saveSettingsAction } from "@/actions/invoices";
 import {
   pickSaveDirectory,
   getSavedDirectoryName,
   clearSavedDirectoryHandle,
-  isDirectoryPickerSupported,
 } from "@/lib/pdfStorage";
-import { FolderOpen, Trash2, Check, RefreshCw } from "lucide-react";
+import { FolderOpen, Trash2, Check } from "lucide-react";
 
 type Settings = Awaited<ReturnType<typeof getSettingsAction>>;
 
@@ -29,15 +28,8 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
 
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [folderName, setFolderName] = useState<string | null>(null);
-  const [isSupported, setIsSupported] = useState(false);
+  const [folderName, setFolderName] = useState<string | null>(() => getSavedDirectoryName());
   const [folderMsg, setFolderMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    setIsSupported(isDirectoryPickerSupported());
-    const savedName = getSavedDirectoryName();
-    if (savedName) setFolderName(savedName);
-  }, []);
 
   async function handleSelectFolder() {
     const res = await pickSaveDirectory();
@@ -65,12 +57,12 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
   }
 
   const inputCls =
-    "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+    "w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors";
 
   function field(label: string, key: keyof typeof form, opts?: { placeholder?: string; type?: string }) {
     return (
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{label}</label>
         <input
           type={opts?.type ?? "text"}
           value={form[key]}
@@ -85,8 +77,8 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Company Info */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-800 mb-4">Company Information</h2>
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 transition-colors">
+        <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Company Information</h2>
         <div className="grid grid-cols-2 gap-4">
           {field("Company Name", "companyName", { placeholder: "Rupala Enterprise" })}
           {field("GSTIN", "gstin", { placeholder: "24ATKPR5908H1ZE" })}
@@ -95,7 +87,7 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
           {field("Email", "email", { placeholder: "rupalaenterprise@gmail.com", type: "email" })}
           {field("Invoice Prefix", "invoicePrefix", { placeholder: "RE" })}
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Address</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Address</label>
             <textarea
               value={form.address}
               onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
@@ -108,8 +100,8 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
       </div>
 
       {/* Bank Details */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-800 mb-4">Bank Details</h2>
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 transition-colors">
+        <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Bank Details</h2>
         <div className="grid grid-cols-3 gap-4">
           {field("Bank Name", "bankName", { placeholder: "HDFC BANK LTD" })}
           {field("Account No.", "bankAccount", { placeholder: "50200081678969" })}
@@ -118,8 +110,8 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
       </div>
 
       {/* Terms */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-800 mb-4">Terms &amp; Conditions</h2>
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 transition-colors">
+        <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Terms &amp; Conditions</h2>
         <textarea
           value={form.termsAndConditions}
           onChange={(e) => setForm((f) => ({ ...f, termsAndConditions: e.target.value }))}
@@ -127,38 +119,38 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
           className={inputCls + " resize-none"}
           placeholder="Enter your standard T&C…"
         />
-        <p className="text-xs text-gray-400 mt-1">Leave blank to use default terms.</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Leave blank to use default terms.</p>
       </div>
 
       {/* PDF Save Location */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-3 transition-colors">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-semibold text-gray-800 text-base">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-base">
               PDF Save Location (કમ્પ્યુટરમાં બિલ સેવ કરવાનું ફોલ્ડર)
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Select a folder once on your computer (e.g. Desktop &gt; Bills). All future bill PDFs will be saved directly into this folder with proper bill numbers and no duplicate copies.
             </p>
           </div>
         </div>
 
-        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="p-2 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-lg">
               <FolderOpen className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs text-gray-500 font-medium">Current Folder / હાલનું ફોલ્ડર:</div>
-              <div className="text-sm font-bold text-gray-900">
+              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Current Folder / હાલનું ફોલ્ડર:</div>
+              <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
                 {folderName ? (
-                  <span className="text-blue-700 flex items-center gap-1.5">
-                    <FolderOpen className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span className="text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                    <FolderOpen className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                     <span>{folderName}</span>
-                    <span className="text-xs font-normal text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Active</span>
+                    <span className="text-xs font-normal text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/60 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">Active</span>
                   </span>
                 ) : (
-                  <span className="text-gray-400 font-normal">કોઈ ફોલ્ડર પસંદ કરેલ નથી (Downloads ફોલ્ડરમાં ડાઉનલોડ થશે)</span>
+                  <span className="text-gray-400 dark:text-gray-500 font-normal">કોઈ ફોલ્ડર પસંદ કરેલ નથી (Downloads ફોલ્ડરમાં ડાઉનલોડ થશે)</span>
                 )}
               </div>
             </div>
@@ -177,7 +169,7 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
               <button
                 type="button"
                 onClick={handleResetFolder}
-                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
                 title="Reset folder setting"
               >
                 <Trash2 className="w-4 h-4" />
@@ -187,7 +179,7 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
         </div>
 
         {folderMsg && (
-          <div className="flex items-center gap-1.5 text-xs text-green-700 font-bold bg-green-50 p-2.5 rounded-xl border border-green-200">
+          <div className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-300 font-bold bg-green-50 dark:bg-green-950/60 p-2.5 rounded-xl border border-green-200 dark:border-green-800">
             <Check className="w-4 h-4" />
             <span>{folderMsg}</span>
           </div>
@@ -198,12 +190,12 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
         <button
           type="submit"
           disabled={saving}
-          className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
+          className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors shadow-sm shadow-blue-500/20 cursor-pointer"
         >
           {saving ? "Saving…" : "Save Settings"}
         </button>
         {saved && (
-          <span className="inline-flex items-center gap-1.5 text-sm text-green-600 font-bold">
+          <span className="inline-flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400 font-bold">
             <Check className="w-4 h-4" />
             <span>Saved!</span>
           </span>

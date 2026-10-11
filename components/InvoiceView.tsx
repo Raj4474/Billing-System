@@ -74,7 +74,7 @@ function ToggleWrapper({
   editTitle?: string;
   children: React.ReactNode;
   className?: string;
-  as?: any;
+  as?: React.ElementType;
 }) {
   return (
     <Component
@@ -192,9 +192,7 @@ export default function InvoiceView({
   const [productsList, setProductsList] = useState<CatalogProduct[]>(catalogProducts || []);
 
   useEffect(() => {
-    if (catalogProducts && catalogProducts.length > 0) {
-      setProductsList(catalogProducts);
-    } else {
+    if (!catalogProducts || catalogProducts.length === 0) {
       getProductsAction().then((prods) => {
         if (prods && prods.length > 0) setProductsList(prods);
       });
@@ -215,7 +213,8 @@ export default function InvoiceView({
     try {
       const saved = localStorage.getItem(STORAGE_KEY_HIDDEN);
       if (saved) {
-        setHidden(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        requestAnimationFrame(() => setHidden(parsed));
       }
     } catch (e) {
       console.error("Failed to load saved hidden fields", e);
@@ -247,7 +246,7 @@ export default function InvoiceView({
     try {
       const savedLang = localStorage.getItem(STORAGE_KEY_LANG) as "en" | "gu" | null;
       if (savedLang === "en" || savedLang === "gu") {
-        setModalLang(savedLang);
+        requestAnimationFrame(() => setModalLang(savedLang));
       }
     } catch {}
   }, []);
@@ -298,28 +297,28 @@ export default function InvoiceView({
   return (
     <div className="w-full">
       {/* ── Top Zoom & Hint Bar (Screen Only) ─────────────────────────────────── */}
-      <div className="mb-6 max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-xs print:hidden">
+      <div className="mb-6 max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs bg-white dark:bg-[#0f172a] px-5 py-3 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs print:hidden">
         <div className="flex items-center gap-3">
-          <span className="font-bold text-gray-700 text-sm flex items-center gap-1.5">
-            <ZoomIn className="w-4 h-4 text-blue-600" />
+          <span className="font-bold text-gray-700 dark:text-gray-300 text-sm flex items-center gap-1.5">
+            <ZoomIn className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             Preview Size:
           </span>
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={() => setZoomLevel((z) => Math.max(0.8, Math.round((z - 0.05) * 100) / 100))}
-              className="px-2.5 py-1 font-bold hover:bg-white rounded-lg text-gray-700 transition-colors cursor-pointer text-sm"
+              className="px-2.5 py-1 font-bold hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors cursor-pointer text-sm"
               title="Zoom Out"
             >
               -
             </button>
-            <span className="px-2 font-mono font-bold text-gray-900 text-sm min-w-[50px] text-center">
+            <span className="px-2 font-mono font-bold text-gray-900 dark:text-gray-100 text-sm min-w-[50px] text-center">
               {Math.round(zoomLevel * 100)}%
             </span>
             <button
               type="button"
               onClick={() => setZoomLevel((z) => Math.min(1.5, Math.round((z + 0.05) * 100) / 100))}
-              className="px-2.5 py-1 font-bold hover:bg-white rounded-lg text-gray-700 transition-colors cursor-pointer text-sm"
+              className="px-2.5 py-1 font-bold hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors cursor-pointer text-sm"
               title="Zoom In"
             >
               +
@@ -331,7 +330,7 @@ export default function InvoiceView({
               type="button"
               onClick={() => setZoomLevel(1.0)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                zoomLevel === 1.0 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                zoomLevel === 1.0 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
               100%
@@ -340,7 +339,7 @@ export default function InvoiceView({
               type="button"
               onClick={() => setZoomLevel(1.18)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                zoomLevel === 1.18 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                zoomLevel === 1.18 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
               118% (Default Large)
@@ -349,7 +348,7 @@ export default function InvoiceView({
               type="button"
               onClick={() => setZoomLevel(1.3)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                zoomLevel === 1.3 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                zoomLevel === 1.3 ? "bg-blue-600 text-white shadow-2xs" : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
               130%
@@ -359,19 +358,19 @@ export default function InvoiceView({
 
         <div className="flex items-center gap-2">
           {toastMessage && (
-            <span className="flex items-center gap-1.5 bg-green-100 text-green-800 px-3 py-1 rounded-lg font-bold text-xs animate-fade-in">
+            <span className="flex items-center gap-1.5 bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-300 px-3 py-1 rounded-lg font-bold text-xs animate-fade-in border border-green-200 dark:border-green-800">
               <Check className="w-3.5 h-3.5" />
               {toastMessage}
             </span>
           )}
-          <span className="text-gray-500 font-medium text-xs flex items-center gap-1.5">
+          <span className="text-gray-500 dark:text-gray-400 font-medium text-xs flex items-center gap-1.5">
             <span>Hover field:</span>
-            <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-700">
-              <Eye className="w-3 h-3 text-gray-600" /> Hide
+            <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+              <Eye className="w-3 h-3 text-gray-600 dark:text-gray-400" /> Hide
             </span>
             <span>|</span>
-            <span className="inline-flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded font-bold text-blue-700">
-              <Pencil className="w-3 h-3 text-blue-600" /> Edit
+            <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded font-bold text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
+              <Pencil className="w-3 h-3 text-blue-600 dark:text-blue-400" /> Edit
             </span>
           </span>
         </div>
@@ -1043,7 +1042,7 @@ function EditModalDialog({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-xl w-full max-h-[90vh] overflow-y-auto flex flex-col"
+        className="bg-white dark:bg-[#0f172a] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 max-w-xl w-full max-h-[90vh] overflow-y-auto flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Customer Modal */}
@@ -1187,19 +1186,19 @@ function ModalHeader({
   onClose: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
-      <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
-        <Pencil className="w-4 h-4 text-blue-600" />
+    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 rounded-t-2xl">
+      <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg flex items-center gap-2">
+        <Pencil className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         {title}
       </h3>
       <div className="flex items-center gap-3">
         {/* Language selector in modal */}
-        <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 text-xs font-semibold shadow-2xs">
+        <div className="flex items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-0.5 text-xs font-semibold shadow-2xs">
           <button
             type="button"
             onClick={() => onLangChange("gu")}
             className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
-              lang === "gu" ? "bg-blue-600 text-white font-bold" : "text-gray-600 hover:bg-gray-100"
+              lang === "gu" ? "bg-blue-600 text-white font-bold" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
             ગુજરાતી
@@ -1208,7 +1207,7 @@ function ModalHeader({
             type="button"
             onClick={() => onLangChange("en")}
             className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
-              lang === "en" ? "bg-blue-600 text-white font-bold" : "text-gray-600 hover:bg-gray-100"
+              lang === "en" ? "bg-blue-600 text-white font-bold" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
             English
@@ -1218,7 +1217,7 @@ function ModalHeader({
         <button
           type="button"
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-700 p-1 rounded-lg transition-colors cursor-pointer"
+          className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded-lg transition-colors cursor-pointer"
         >
           <X size={18} />
         </button>
@@ -1243,12 +1242,12 @@ function ModalFooter({
   const savingText = lang === "gu" ? "સેવ થાય છે..." : "Saving...";
 
   return (
-    <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
+    <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 rounded-b-2xl">
       <button
         type="button"
         onClick={onClose}
         disabled={isPending}
-        className="px-5 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+        className="px-5 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
       >
         {cancelText}
       </button>
@@ -1291,7 +1290,7 @@ function CustomerEditForm({
   }
 
   const inputCls =
-    "w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
+    "w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
 
   return (
     <form onSubmit={handleSubmit}>
@@ -1303,7 +1302,7 @@ function CustomerEditForm({
       />
       <div className="p-6 space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "ગ્રાહકનું નામ" : "Customer Name"} <span className="text-red-500">*</span>
           </label>
           <input
@@ -1315,7 +1314,7 @@ function CustomerEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "સરનામું" : "Address"}
           </label>
           <textarea
@@ -1327,7 +1326,7 @@ function CustomerEditForm({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
               {lang === "gu" ? "મોબાઇલ નં." : "Mobile No."}
             </label>
             <input
@@ -1338,7 +1337,7 @@ function CustomerEditForm({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
               {lang === "gu" ? "સ્થળ (Place of Supply)" : "Place of Supply"}
             </label>
             <input
@@ -1351,7 +1350,7 @@ function CustomerEditForm({
           </div>
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "GSTIN નં." : "GSTIN No."}
           </label>
           <input
@@ -1400,14 +1399,14 @@ function DateEditForm({
         onClose={onClose}
       />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">
+        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
           {lang === "gu" ? "બિલની તારીખ" : "Invoice Date"}
         </label>
         <input
           type="date"
           value={val}
           onChange={(e) => setVal(e.target.value)}
-          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+          className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
           required
         />
       </div>
@@ -1447,7 +1446,7 @@ function TransportEditForm({
         onClose={onClose}
       />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">
+        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
           {lang === "gu" ? "વાહન / ટ્રાન્સપોર્ટ નં." : "Transport / Vehicle No."}
         </label>
         <input
@@ -1455,7 +1454,7 @@ function TransportEditForm({
           value={val}
           onChange={(e) => setVal(e.target.value.toUpperCase())}
           placeholder="GJ36T2093"
-          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono"
+          className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono"
         />
       </div>
       <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
@@ -1494,7 +1493,7 @@ function EwayBillEditForm({
         onClose={onClose}
       />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">
+        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
           {lang === "gu" ? "ઈ-વે બિલ નં." : "e-Way Bill No."}
         </label>
         <input
@@ -1502,7 +1501,7 @@ function EwayBillEditForm({
           value={val}
           onChange={(e) => setVal(e.target.value)}
           placeholder="652172775440"
-          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono"
+          className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono"
         />
       </div>
       <ModalFooter isPending={isPending} onClose={onClose} lang={lang} />
@@ -1536,7 +1535,7 @@ function DalalEditForm({
   }
 
   const inputCls =
-    "w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
+    "w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
 
   return (
     <form onSubmit={handleSubmit}>
@@ -1548,7 +1547,7 @@ function DalalEditForm({
       />
       <div className="p-6 space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "દલાલનું નામ" : "Dalal Name"}
           </label>
           <input
@@ -1560,7 +1559,7 @@ function DalalEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "દલાલનો મોબાઈલ નં." : "Dalal Contact No."}
           </label>
           <input
@@ -1608,14 +1607,14 @@ function NotesEditForm({
         onClose={onClose}
       />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">
+        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
           {lang === "gu" ? "બિલની નોંધ" : "Invoice Note"}
         </label>
         <textarea
           value={val}
           onChange={(e) => setVal(e.target.value)}
           rows={3}
-          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium resize-none"
+          className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium resize-none"
           placeholder={lang === "gu" ? "બિલ માટે કોઈ ખાસ નોંધ લખો..." : "Add any specific note for this bill..."}
         />
       </div>
@@ -1649,7 +1648,7 @@ function BankDetailsEditForm({
   }
 
   const inputCls =
-    "w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
+    "w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
 
   return (
     <form onSubmit={handleSubmit}>
@@ -1661,7 +1660,7 @@ function BankDetailsEditForm({
       />
       <div className="p-6 space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "બેંકનું નામ" : "Bank Name"}
           </label>
           <input
@@ -1673,7 +1672,7 @@ function BankDetailsEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "બેંક ખાતા નંબર" : "Bank A/c No."}
           </label>
           <input
@@ -1685,7 +1684,7 @@ function BankDetailsEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "RTGS / IFSC કોડ" : "RTGS / IFSC Code"}
           </label>
           <input
@@ -1733,14 +1732,14 @@ function TermsEditForm({
         onClose={onClose}
       />
       <div className="p-6">
-        <label className="block text-xs font-bold text-gray-700 mb-1">
+        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
           {lang === "gu" ? "નિયમો અને શરતો" : "Terms & Conditions"}
         </label>
         <textarea
           value={val}
           onChange={(e) => setVal(e.target.value)}
           rows={5}
-          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium resize-none leading-relaxed"
+          className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium resize-none leading-relaxed"
           placeholder="1. Goods once sold will not be taken back..."
         />
       </div>
@@ -1784,7 +1783,7 @@ function CompanyInfoEditForm({
   }
 
   const inputCls =
-    "w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
+    "w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium";
 
   return (
     <form onSubmit={handleSubmit}>
@@ -1796,7 +1795,7 @@ function CompanyInfoEditForm({
       />
       <div className="p-6 space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "પેઢીનું નામ" : "Company Name"}
           </label>
           <input
@@ -1807,7 +1806,7 @@ function CompanyInfoEditForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
             {lang === "gu" ? "સરનામું" : "Company Address"}
           </label>
           <textarea
@@ -1819,7 +1818,7 @@ function CompanyInfoEditForm({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
               {lang === "gu" ? "ફોન" : "Phone"}
             </label>
             <input
@@ -1830,7 +1829,7 @@ function CompanyInfoEditForm({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
               {lang === "gu" ? "ઈમેલ" : "Email"}
             </label>
             <input
@@ -1843,7 +1842,7 @@ function CompanyInfoEditForm({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
               {lang === "gu" ? "GSTIN નં." : "GSTIN No."}
             </label>
             <input
@@ -1854,7 +1853,7 @@ function CompanyInfoEditForm({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
               {lang === "gu" ? "MSME નં." : "MSME No."}
             </label>
             <input
@@ -1876,7 +1875,7 @@ function LineItemsEditForm({
   products = [],
   lang,
   onLangChange,
-  useIgst,
+  useIgst: _useIgst,
   isPending,
   onClose,
   onSave,
@@ -1959,17 +1958,17 @@ function LineItemsEditForm({
           {list.map((row, idx) => (
             <div
               key={idx}
-              className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl space-y-2.5 relative"
+              className="p-3.5 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-xl space-y-2.5 relative"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-500">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
                   {lang === "gu" ? `વસ્તુ #${idx + 1}` : `Item #${idx + 1}`}
                 </span>
                 {list.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeRow(idx)}
-                    className="text-red-500 hover:text-red-700 p-1 rounded transition-colors cursor-pointer"
+                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1 rounded transition-colors cursor-pointer"
                     title={lang === "gu" ? "આ વસ્તુ હટાવો" : "Remove item"}
                   >
                     <Trash2 size={14} />
@@ -1979,7 +1978,7 @@ function LineItemsEditForm({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                  <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">
                     {lang === "gu" ? "વસ્તુનું નામ" : "Product Name"}
                   </label>
                   <ProductSelector
@@ -1996,11 +1995,11 @@ function LineItemsEditForm({
                     onChangeCustomName={(v) => updateRow(idx, { productName: v })}
                     lang={lang}
                     placeholder={lang === "gu" ? "દા.ત. ચણા / સિંગદાણા..." : "Product name"}
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 bg-white"
+                    className="w-full px-2.5 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                  <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">
                     {lang === "gu" ? "HSN કોડ" : "HSN/SAC"}
                   </label>
                   <input
@@ -2008,14 +2007,14 @@ function LineItemsEditForm({
                     value={row.hsnCode || ""}
                     onChange={(e) => updateRow(idx, { hsnCode: e.target.value })}
                     placeholder="HSN"
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 bg-white"
+                    className="w-full px-2.5 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-4 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                  <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">
                     {lang === "gu" ? "માત્રા (Qty)" : "Qty"}
                   </label>
                   <input
@@ -2024,23 +2023,23 @@ function LineItemsEditForm({
                     min="0"
                     value={row.quantity}
                     onChange={(e) => updateRow(idx, { quantity: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
+                    className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-medium bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                  <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">
                     {lang === "gu" ? "એકમ (Unit)" : "Unit"}
                   </label>
                   <UnitSelector
                     value={row.unit}
                     onChange={(val) => updateRow(idx, { unit: val })}
                     lang={lang}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
+                    className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-medium bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                  <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">
                     {lang === "gu" ? "ભાવ (₹)" : "Rate (₹)"}
                   </label>
                   <input
@@ -2049,29 +2048,29 @@ function LineItemsEditForm({
                     min="0"
                     value={row.rate}
                     onChange={(e) => updateRow(idx, { rate: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
+                    className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-medium bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-0.5">
+                  <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-0.5">
                     {lang === "gu" ? "GST %" : "GST %"}
                   </label>
                   <select
                     value={String(parseFloat(row.gstPercent || "0"))}
                     onChange={(e) => updateRow(idx, { gstPercent: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-medium bg-white"
+                    className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-medium bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                   >
-                    <option value="0">0%</option>
-                    <option value="5">5%</option>
-                    <option value="12">12%</option>
-                    <option value="18">18%</option>
-                    <option value="28">28%</option>
+                    <option value="0" className="dark:bg-gray-900 dark:text-gray-100">0%</option>
+                    <option value="5" className="dark:bg-gray-900 dark:text-gray-100">5%</option>
+                    <option value="12" className="dark:bg-gray-900 dark:text-gray-100">12%</option>
+                    <option value="18" className="dark:bg-gray-900 dark:text-gray-100">18%</option>
+                    <option value="28" className="dark:bg-gray-900 dark:text-gray-100">28%</option>
                   </select>
                 </div>
               </div>
 
-              <div className="text-right text-xs font-bold text-gray-800 pt-1">
+              <div className="text-right text-xs font-bold text-gray-800 dark:text-gray-200 pt-1">
                 {lang === "gu" ? "રકમ:" : "Item Amount:"} ₹{formatINR(parseFloat(row.amount) || 0)}
               </div>
             </div>
@@ -2081,14 +2080,14 @@ function LineItemsEditForm({
         <button
           type="button"
           onClick={addRow}
-          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-colors cursor-pointer border border-transparent dark:border-blue-900/40"
         >
           <Plus size={14} />
           {lang === "gu" ? "બીજી વસ્તુ ઉમેરો" : "Add Another Item"}
         </button>
 
         {/* Live Calculation Box */}
-        <div className="p-3.5 bg-gray-100 rounded-xl text-xs space-y-1 font-medium text-gray-700">
+        <div className="p-3.5 bg-gray-100 dark:bg-gray-900/80 rounded-xl text-xs space-y-1 font-medium text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-800">
           <div className="flex justify-between">
             <span>{lang === "gu" ? "કુલ રકમ (Subtotal):" : "Subtotal:"}</span>
             <span>₹{formatINR(subtotal)}</span>
@@ -2097,7 +2096,7 @@ function LineItemsEditForm({
             <span>{lang === "gu" ? "કુલ ટેક્સ:" : "Total Tax:"}</span>
             <span>₹{formatINR(totalTax)}</span>
           </div>
-          <div className="flex justify-between font-bold text-gray-900 text-sm border-t border-gray-300 pt-1">
+          <div className="flex justify-between font-bold text-gray-900 dark:text-white text-sm border-t border-gray-300 dark:border-gray-700 pt-1">
             <span>{lang === "gu" ? "કુલ રકમ (Grand Total):" : "Grand Total:"}</span>
             <span>₹{formatINR(grandTotal)}</span>
           </div>

@@ -75,7 +75,10 @@ export async function pickSaveDirectory(): Promise<{
   }
 
   try {
-    const handle = await (window as any).showDirectoryPicker({
+    const pickerWindow = window as unknown as {
+      showDirectoryPicker?: (options?: Record<string, unknown>) => Promise<FileSystemDirectoryHandle>;
+    };
+    const handle = await pickerWindow.showDirectoryPicker?.({
       mode: "readwrite",
       startIn: "documents",
     });
@@ -88,8 +91,8 @@ export async function pickSaveDirectory(): Promise<{
       return { supported: true, name: handle.name };
     }
     return { supported: true, cancelled: true };
-  } catch (err: any) {
-    if (err.name === "AbortError") {
+  } catch (err: unknown) {
+    if ((err as { name?: string })?.name === "AbortError") {
       return { supported: true, cancelled: true };
     }
     console.error("Error picking directory:", err);
@@ -108,10 +111,14 @@ export async function verifyHandlePermission(
 ): Promise<boolean> {
   try {
     const options = { mode: readWrite ? "readwrite" : "read" };
-    if ((await (handle as any).queryPermission(options)) === "granted") {
+    const permHandle = handle as unknown as {
+      queryPermission?: (opts: typeof options) => Promise<string>;
+      requestPermission?: (opts: typeof options) => Promise<string>;
+    };
+    if ((await permHandle.queryPermission?.(options)) === "granted") {
       return true;
     }
-    if ((await (handle as any).requestPermission(options)) === "granted") {
+    if ((await permHandle.requestPermission?.(options)) === "granted") {
       return true;
     }
     return false;
@@ -159,7 +166,7 @@ export async function generateInvoicePdfBlob(elementId = "invoice-print"): Promi
     clone.style.zoom = "1";
     clone.style.transform = "none";
     clone.style.boxShadow = "none";
-    (clone.style as any).webkitBoxShadow = "none";
+    clone.style.setProperty("-webkit-box-shadow", "none");
     clone.style.width = "794px";
     clone.style.minWidth = "794px";
     clone.style.maxWidth = "794px";
@@ -281,7 +288,9 @@ export async function saveInvoicePdf({
         // createWritable() defaults to keepExistingData: false → TRUNCATES the file.
         // Result: existing files are silently overwritten — no "(1)" or "copy" suffixes.
         const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
-        const writable = await (fileHandle as any).createWritable();
+        const writable = await (fileHandle as unknown as {
+          createWritable: () => Promise<FileSystemWritableFileStream>;
+        }).createWritable();
         await writable.write(blob);
         await writable.close();
 

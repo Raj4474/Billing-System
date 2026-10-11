@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import Link from "next/link";
 import { createInvoiceAction, updateFullInvoiceAction, searchCustomersAction } from "@/actions/invoices";
 import { getProductsAction } from "@/actions/products";
 import { ProductSelector, CatalogProduct } from "./ProductSelector";
@@ -87,7 +88,7 @@ function AutocompleteInput<T extends { id: string; name: string; hsnCode?: strin
         className={className}
       />
       {open && (
-        <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+        <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
           {suggestions.map((s) => (
             <button
               key={s.id}
@@ -96,11 +97,11 @@ function AutocompleteInput<T extends { id: string; name: string; hsnCode?: strin
                 onSelect(s);
                 setOpen(false);
               }}
-              className="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/80 transition-colors border-b last:border-b-0 border-gray-100 flex items-center justify-between cursor-pointer"
+              className="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/80 dark:hover:bg-blue-900/30 transition-colors border-b last:border-b-0 border-gray-100 dark:border-gray-800/60 flex items-center justify-between cursor-pointer"
             >
-              <span className="font-bold text-gray-900 text-sm">{s.name}</span>
+              <span className="font-bold text-gray-900 dark:text-gray-100 text-sm">{s.name}</span>
               {(s.hsnCode || s.defaultGst) && (
-                <span className="text-[11px] text-gray-500 font-medium">
+                <span className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
                   {s.hsnCode ? `HSN: ${s.hsnCode}` : ""}
                   {s.hsnCode && s.defaultGst ? " · " : ""}
                   {s.defaultGst ? `GST: ${s.defaultGst}%` : ""}
@@ -300,9 +301,7 @@ export default function InvoiceForm({
   const [productsList, setProductsList] = useState<CatalogProduct[]>(catalogProducts || []);
 
   useEffect(() => {
-    if (catalogProducts && catalogProducts.length > 0) {
-      setProductsList(catalogProducts);
-    } else {
+    if (!catalogProducts || catalogProducts.length === 0) {
       getProductsAction().then((prods) => {
         if (prods && prods.length > 0) setProductsList(prods);
       });
@@ -439,40 +438,40 @@ export default function InvoiceForm({
   }
 
   const inputCls =
-    "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+    "w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {isEditing ? `${t("editBill")} (${initialInvoice.invoiceNumber})` : t("newBill")}
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             {isEditing ? t("editSubtitle") : t("createSubtitle")}
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
-          <label htmlFor="lang-select" className="text-sm font-medium text-gray-600">Language:</label>
+        <div className="flex items-center gap-2 bg-white dark:bg-[#0f172a] px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+          <label htmlFor="lang-select" className="text-sm font-medium text-gray-600 dark:text-gray-400">Language:</label>
           <select
             id="lang-select"
             value={lang}
             onChange={(e) => setLang(e.target.value as Lang)}
-            className="text-sm border-none bg-transparent focus:ring-0 text-gray-900 font-medium cursor-pointer"
+            className="text-sm border-none bg-transparent focus:ring-0 text-gray-900 dark:text-gray-100 font-medium cursor-pointer"
           >
-            <option value="en">English</option>
-            <option value="gu">ગુજરાતી</option>
+            <option value="en" className="dark:bg-[#0f172a] dark:text-gray-100">English</option>
+            <option value="gu" className="dark:bg-[#0f172a] dark:text-gray-100">ગુજરાતી</option>
           </select>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ── Customer ──────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-800 mb-4">{t("customerBillTo")}</h2>
+        <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">{t("customerBillTo")}</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 {t("customerName")} <span className="text-red-500">*</span>
               </label>
               <AutocompleteInput<CustomerResult>
@@ -492,7 +491,7 @@ export default function InvoiceForm({
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">{t("address")}</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("address")}</label>
               <textarea
                 value={customerAddress}
                 onChange={(e) => setCustomerAddress(e.target.value)}
@@ -502,7 +501,7 @@ export default function InvoiceForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">{t("gstin")}</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("gstin")}</label>
               <input
                 type="text"
                 value={customerGstin}
@@ -512,7 +511,7 @@ export default function InvoiceForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">{t("mobileNo")}</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("mobileNo")}</label>
               <input
                 type="tel"
                 value={customerPhone}
@@ -522,7 +521,7 @@ export default function InvoiceForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">{t("placeOfSupply")}</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("placeOfSupply")}</label>
               <input
                 type="text"
                 value={customerPos}
@@ -535,11 +534,11 @@ export default function InvoiceForm({
         </div>
 
         {/* ── Invoice Meta ──────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-800 mb-4">{t("invoiceDetails")}</h2>
+        <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">{t("invoiceDetails")}</h2>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">{t("date")}</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("date")}</label>
               <input
                 type="date"
                 value={date}
@@ -549,7 +548,7 @@ export default function InvoiceForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 {t("transport")}
               </label>
               <input
@@ -561,7 +560,7 @@ export default function InvoiceForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 {t("ewayBillNo")}
               </label>
               <input
@@ -573,7 +572,7 @@ export default function InvoiceForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 {t("dalalName")}
               </label>
               <input
@@ -585,7 +584,7 @@ export default function InvoiceForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 {t("dalalContact")}
               </label>
               <input
@@ -598,10 +597,10 @@ export default function InvoiceForm({
             </div>
 
             {/* ── GST Mode Selection with Clear Visual Hints ── */}
-            <div className="col-span-1 md:col-span-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100 mt-1">
-              <label className="block text-xs font-bold text-gray-800 mb-2 flex items-center justify-between">
+            <div className="col-span-1 md:col-span-3 bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/40 mt-1">
+              <label className="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center justify-between">
                 <span>{t("gstType")}</span>
-                <span className="text-[11px] font-semibold text-blue-700 flex items-center gap-1">
+                <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-1">
                   <Info className="w-3.5 h-3.5 shrink-0" />
                   <span>{lang === "gu" ? "ગ્રાહકના રાજ્ય મુજબ સાચો પ્રકાર પસંદ કરો" : "Choose based on customer's state"}</span>
                 </span>
@@ -611,8 +610,8 @@ export default function InvoiceForm({
                 <label
                   className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                     gstMode === "cgst_sgst"
-                      ? "bg-white border-blue-600 shadow-sm ring-2 ring-blue-100"
-                      : "bg-white/60 border-gray-200 hover:bg-white"
+                      ? "bg-white dark:bg-gray-900 border-blue-600 dark:border-blue-500 shadow-sm ring-2 ring-blue-100 dark:ring-blue-950"
+                      : "bg-white/60 dark:bg-gray-900/40 border-gray-200 dark:border-gray-800 hover:bg-white dark:hover:bg-gray-900"
                   }`}
                 >
                   <input
@@ -624,11 +623,11 @@ export default function InvoiceForm({
                     className="mt-1 w-4 h-4 text-blue-600"
                   />
                   <div>
-                    <div className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                    <div className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1.5">
                       <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
                       {lang === "gu" ? "CGST + SGST (ગુજરાતમાં વેચાણ)" : "CGST + SGST (Within Gujarat)"}
                     </div>
-                    <p className="text-xs text-gray-600 mt-1 leading-snug">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-snug">
                       {lang === "gu"
                         ? "જ્યારે ગ્રાહક ગુજરાતનો હોય (સ્થાનિક વેચાણ - Intra-State)"
                         : "For sales to customers inside Gujarat (Local / Intra-State)"}
@@ -639,8 +638,8 @@ export default function InvoiceForm({
                 <label
                   className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                     gstMode === "igst"
-                      ? "bg-white border-blue-600 shadow-sm ring-2 ring-blue-100"
-                      : "bg-white/60 border-gray-200 hover:bg-white"
+                      ? "bg-white dark:bg-gray-900 border-blue-600 dark:border-blue-500 shadow-sm ring-2 ring-blue-100 dark:ring-blue-950"
+                      : "bg-white/60 dark:bg-gray-900/40 border-gray-200 dark:border-gray-800 hover:bg-white dark:hover:bg-gray-900"
                   }`}
                 >
                   <input
@@ -652,11 +651,11 @@ export default function InvoiceForm({
                     className="mt-1 w-4 h-4 text-blue-600"
                   />
                   <div>
-                    <div className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                    <div className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1.5">
                       <Truck className="w-4 h-4 text-blue-600 shrink-0" />
                       {lang === "gu" ? "IGST (ગુજરાત બહાર / Export)" : "IGST (Outside Gujarat / Export)"}
                     </div>
-                    <p className="text-xs text-gray-600 mt-1 leading-snug">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-snug">
                       {lang === "gu"
                         ? "જ્યારે ગ્રાહક બીજા રાજ્યનો હોય અથવા એક્સપોર્ટ કરતા હોવ (Inter-State)"
                         : "For sales to customers in other states or international export"}
@@ -669,28 +668,28 @@ export default function InvoiceForm({
         </div>
 
         {/* ── Line Items ────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-800 mb-4">{t("items")}</h2>
+        <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">{t("items")}</h2>
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-8">#</th>
-                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500">{t("product")}</th>
-                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-28">{t("hsn")}</th>
-                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-20">{t("qty")}</th>
-                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-28">{t("unit")}</th>
-                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-24">{t("rate")}</th>
-                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 w-20">{t("gstPercent")}</th>
-                  <th className="text-right py-2 px-1 text-xs font-medium text-gray-500 w-24">{t("amount")}</th>
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-8">#</th>
+                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 dark:text-gray-400">{t("product")}</th>
+                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-28">{t("hsn")}</th>
+                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-20">{t("qty")}</th>
+                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-28">{t("unit")}</th>
+                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-24">{t("rate")}</th>
+                  <th className="text-left py-2 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-20">{t("gstPercent")}</th>
+                  <th className="text-right py-2 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-24">{t("amount")}</th>
                   <th className="w-8"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-800/60">
                 {items.map((item, idx) => (
                   <tr key={idx}>
-                    <td className="py-2 px-1 text-gray-400 text-xs">{item.srNo}</td>
+                    <td className="py-2 px-1 text-gray-400 dark:text-gray-500 text-xs">{item.srNo}</td>
                     <td className="py-2 px-1">
                       <ProductSelector
                         value={item.productName}
@@ -706,7 +705,7 @@ export default function InvoiceForm({
                         onChangeCustomName={(v) => updateItem(idx, { productName: v })}
                         lang={lang}
                         placeholder={t("productName")}
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                        className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                       />
                     </td>
                     <td className="py-2 px-1">
@@ -715,7 +714,7 @@ export default function InvoiceForm({
                         value={item.hsnCode}
                         onChange={(e) => updateItem(idx, { hsnCode: e.target.value })}
                         placeholder="HSN"
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                       />
                     </td>
                     <td className="py-2 px-1">
@@ -726,7 +725,7 @@ export default function InvoiceForm({
                         value={item.quantity}
                         onChange={(e) => updateItem(idx, { quantity: e.target.value })}
                         placeholder="0"
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                       />
                     </td>
                     <td className="py-2 px-1">
@@ -734,7 +733,7 @@ export default function InvoiceForm({
                         value={item.unit}
                         onChange={(val) => updateItem(idx, { unit: val })}
                         lang={lang}
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                        className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                       />
                     </td>
                     <td className="py-2 px-1">
@@ -745,21 +744,21 @@ export default function InvoiceForm({
                         value={item.rate}
                         onChange={(e) => updateItem(idx, { rate: e.target.value })}
                         placeholder="0.00"
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                       />
                     </td>
                     <td className="py-2 px-1">
                       <select
                         value={String(parseFloat(item.gstPercent || "0"))}
                         onChange={(e) => updateItem(idx, { gstPercent: e.target.value })}
-                        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full px-2 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                       >
                         {GST_OPTIONS.map((g) => (
-                          <option key={g} value={g}>{g}%</option>
+                          <option key={g} value={g} className="dark:bg-gray-900 dark:text-gray-100">{g}%</option>
                         ))}
                       </select>
                     </td>
-                    <td className="py-2 px-1 text-right font-medium text-gray-800">
+                    <td className="py-2 px-1 text-right font-medium text-gray-800 dark:text-gray-200">
                       {item.amount > 0
                         ? new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(item.amount)
                         : "—"}
@@ -769,7 +768,7 @@ export default function InvoiceForm({
                         <button
                           type="button"
                           onClick={() => removeItem(idx)}
-                          className="text-gray-300 hover:text-red-500 transition-colors"
+                          className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -784,7 +783,7 @@ export default function InvoiceForm({
           <button
             type="button"
             onClick={addItem}
-            className="mt-3 flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="mt-3 flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
           >
             <Plus className="w-4 h-4" />
             {t("addItem")}
@@ -793,28 +792,28 @@ export default function InvoiceForm({
           {/* Totals */}
           <div className="mt-6 flex justify-end">
             <div className="w-72 space-y-2 text-sm">
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>{t("subtotal")}</span>
                 <span>₹{new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(subtotal)}</span>
               </div>
               {gstMode === "cgst_sgst" ? (
                 <>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>CGST</span>
                     <span>₹{new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(cgst)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>SGST</span>
                     <span>₹{new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(sgst)}</span>
                   </div>
                 </>
               ) : (
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>IGST</span>
                   <span>₹{new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(igst)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-gray-900 text-base border-t border-gray-200 pt-2">
+              <div className="flex justify-between font-bold text-gray-900 dark:text-white text-base border-t border-gray-200 dark:border-gray-800 pt-2">
                 <span>{t("grandTotal")}</span>
                 <span>₹{new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(grandTotal)}</span>
               </div>
@@ -823,8 +822,8 @@ export default function InvoiceForm({
         </div>
 
         {/* ── Notes ────────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <label className="block text-xs font-medium text-gray-600 mb-1">{t("notes")}</label>
+        <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("notes")}</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -839,16 +838,16 @@ export default function InvoiceForm({
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 px-6 py-4 bg-blue-600 text-white text-lg font-bold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-all shadow-md hover:-translate-y-0.5"
+            className="flex-1 px-6 py-4 bg-blue-600 text-white text-lg font-bold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-all shadow-md hover:-translate-y-0.5 cursor-pointer"
           >
             {submitting ? t("saving") : (isEditing ? t("updateAndView") : t("saveAndView"))}
           </button>
-          <a
+          <Link
             href="/bills"
-            className="px-6 py-4 border-2 border-gray-300 text-gray-700 text-lg font-bold rounded-xl hover:bg-gray-100 transition-all text-center sm:w-40"
+            className="px-6 py-4 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-lg font-bold rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-center sm:w-40"
           >
             {t("cancel")}
-          </a>
+          </Link>
         </div>
       </form>
     </div>

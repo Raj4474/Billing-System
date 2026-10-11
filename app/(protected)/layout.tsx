@@ -24,7 +24,7 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 print:block print:bg-white">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-[#090d16] text-gray-900 dark:text-gray-100 print:block print:bg-white print:text-black transition-colors duration-200">
       <Sidebar />
       <main className="flex-1 overflow-y-auto print:overflow-visible print:block print:w-full print:p-0">
         {children}

@@ -54,7 +54,7 @@ export function ProductSelector({
         (p) => p.name.trim().toLowerCase() === value.trim().toLowerCase()
       );
       if (match) {
-        setCustomMode(false);
+        requestAnimationFrame(() => setCustomMode(false));
       }
     }
   }, [value, products]);
@@ -80,7 +80,7 @@ export function ProductSelector({
             setCustomMode(false);
             onChangeCustomName("");
           }}
-          className="shrink-0 px-2 py-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition-colors cursor-pointer flex items-center gap-1"
+          className="shrink-0 px-2 py-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 rounded-md border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer flex items-center gap-1"
           title={lang === "gu" ? "લિસ્ટમાંથી પસંદ કરો" : "Select from catalog list"}
         >
           <Undo2 className="w-3.5 h-3.5" />
@@ -119,7 +119,7 @@ export function ProductSelector({
       }}
       className={className}
     >
-      <option value="">
+      <option value="" className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         {lang === "gu" ? "-- વસ્તુ પસંદ કરો --" : "-- Select Product --"}
       </option>
       {products.map((p) => {
@@ -133,12 +133,12 @@ export function ProductSelector({
           .join(" · ");
 
         return (
-          <option key={p.id} value={p.id}>
+          <option key={p.id} value={p.id} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
             {p.name} {meta ? `(${meta})` : ""}
           </option>
         );
       })}
-      <option value="__other__" className="font-bold text-blue-700">
+      <option value="__other__" className="font-bold text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-900">
         {lang === "gu"
           ? "+ અન્ય (Other - નવી વસ્તુ લખવા માટે)"
           : "+ Other (Type Custom Item)"}

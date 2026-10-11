@@ -140,25 +140,25 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t("products")}</h1>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tight">{t("products")}</h1>
             {toast && (
-              <span className="flex items-center gap-1.5 bg-green-100 text-green-800 px-3 py-1 rounded-lg font-bold text-xs animate-fade-in">
+              <span className="flex items-center gap-1.5 bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-300 px-3 py-1 rounded-lg font-bold text-xs animate-fade-in border border-green-200 dark:border-green-800">
                 <Check className="w-3.5 h-3.5" />
                 {toast}
               </span>
             )}
           </div>
-          <p className="text-base text-gray-500 mt-1 font-medium">{t("subtitle")}</p>
+          <p className="text-base text-gray-500 dark:text-gray-400 mt-1 font-medium">{t("subtitle")}</p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Language Toggle */}
-          <div className="flex items-center bg-white border border-gray-200 rounded-xl p-1 text-xs font-bold shadow-2xs">
+          <div className="flex items-center bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-gray-800 rounded-xl p-1 text-xs font-bold shadow-2xs">
             <button
               type="button"
               onClick={() => setLang("gu")}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                lang === "gu" ? "bg-blue-600 text-white shadow-2xs" : "text-gray-600 hover:bg-gray-100"
+                lang === "gu" ? "bg-blue-600 text-white shadow-2xs" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
               ગુજરાતી
@@ -167,7 +167,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
               type="button"
               onClick={() => setLang("en")}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                lang === "en" ? "bg-blue-600 text-white shadow-2xs" : "text-gray-600 hover:bg-gray-100"
+                lang === "en" ? "bg-blue-600 text-white shadow-2xs" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
               English
@@ -178,7 +178,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
           <button
             type="button"
             onClick={openAddModal}
-            className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white text-base font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-200 hover:-translate-y-0.5 cursor-pointer shrink-0"
+            className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white text-base font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 hover:-translate-y-0.5 cursor-pointer shrink-0"
           >
             <Plus className="w-5 h-5" />
             {t("addProduct")}
@@ -187,42 +187,42 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
       </div>
 
       {/* ── Search & Count Bar ──────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl p-4 border border-gray-100 dark:border-gray-800/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors">
         <div className="relative w-full sm:max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-colors"
           />
         </div>
-        <span className="text-sm font-bold text-gray-500 shrink-0">
+        <span className="text-sm font-bold text-gray-500 dark:text-gray-400 shrink-0">
           {filtered.length} {t("totalProducts")}
         </span>
       </div>
 
       {/* ── Products Table ──────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800/80 overflow-hidden transition-colors">
         {filtered.length === 0 ? (
-          <div className="px-6 py-16 text-center text-gray-400 text-base font-medium space-y-3">
-            <Package className="w-12 h-12 mx-auto text-gray-300" />
+          <div className="px-6 py-16 text-center text-gray-400 dark:text-gray-500 text-base font-medium space-y-3">
+            <Package className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600" />
             <p>{productsList.length === 0 ? t("noProducts") : t("noProductsMatch")}</p>
             {productsList.length === 0 && (
               <button
                 type="button"
                 onClick={openAddModal}
-                className="text-blue-600 font-bold hover:underline cursor-pointer"
+                className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
               >
                 + {t("addProduct")} →
               </button>
             )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800/80">
             {/* Header */}
-            <div className="grid grid-cols-[1fr_130px_130px_110px_100px] gap-4 px-6 py-3.5 bg-gray-50/70 text-xs font-bold text-gray-500 uppercase tracking-wider">
+            <div className="grid grid-cols-[1fr_130px_130px_110px_100px] gap-4 px-6 py-3.5 bg-gray-50/70 dark:bg-gray-900/40 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <span>{t("productName")}</span>
               <span>{t("hsnCode")}</span>
               <span>{t("standardUnit")}</span>
@@ -234,21 +234,21 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
             {filtered.map((p) => (
               <div
                 key={p.id}
-                className="grid grid-cols-[1fr_130px_130px_110px_100px] gap-4 px-6 py-4 items-center hover:bg-blue-50/40 transition-colors group"
+                className="grid grid-cols-[1fr_130px_130px_110px_100px] gap-4 px-6 py-4 items-center hover:bg-blue-50/40 dark:hover:bg-gray-800/40 transition-colors group"
               >
                 <div>
-                  <p className="text-base font-bold text-gray-900">{p.name}</p>
+                  <p className="text-base font-bold text-gray-900 dark:text-gray-100">{p.name}</p>
                 </div>
-                <div className="font-mono text-sm font-medium text-gray-600">
+                <div className="font-mono text-sm font-medium text-gray-600 dark:text-gray-400">
                   {p.hsnCode || "—"}
                 </div>
                 <div>
-                  <span className="text-xs font-bold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg">
+                  <span className="text-xs font-bold px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg">
                     {p.defaultUnit || "kg"}
                   </span>
                 </div>
                 <div className="text-center">
-                  <span className="text-xs font-black px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg">
+                  <span className="text-xs font-black px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-lg">
                     {p.defaultGst || "0"}%
                   </span>
                 </div>
@@ -256,7 +256,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
                   <button
                     type="button"
                     onClick={() => openEditModal(p)}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                    className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-lg transition-all cursor-pointer"
                     title={t("editProduct")}
                   >
                     <Pencil className="w-4 h-4" />
@@ -264,7 +264,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
                   <button
                     type="button"
                     onClick={() => handleDelete(p.id, p.name)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                    className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all cursor-pointer"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -283,19 +283,19 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
           onClick={() => setModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden"
+            className="bg-white dark:bg-[#0f172a] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 max-w-lg w-full overflow-hidden transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-              <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
-                <Package className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40">
+              <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg flex items-center gap-2">
+                <Package className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 {editingProduct ? t("editProduct") : t("addProduct")}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="text-gray-400 hover:text-gray-700 p-1 rounded-lg transition-colors cursor-pointer"
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -304,7 +304,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
             {/* Modal Form */}
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                   {t("productName")} <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -312,7 +312,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t("productNamePlaceholder")}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                  className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-colors"
                   required
                   autoFocus
                 />
@@ -320,7 +320,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                     {t("hsnCode")}
                   </label>
                   <input
@@ -328,34 +328,34 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
                     value={hsnCode}
                     onChange={(e) => setHsnCode(e.target.value)}
                     placeholder="e.g. 0713"
-                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono"
+                    className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium font-mono transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                     {t("standardUnit")}
                   </label>
                   <UnitSelector
                     value={unit}
                     onChange={(val) => setUnit(val)}
                     lang={lang}
-                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium bg-white"
+                    className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                   {t("gstPercent")}
                 </label>
                 <select
                   value={gst}
                   onChange={(e) => setGst(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium bg-white"
+                  className="w-full px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-colors"
                 >
                   {GST_RATES.map((g) => (
-                    <option key={g} value={g}>
+                    <option key={g} value={g} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
                       {g}% GST
                     </option>
                   ))}
@@ -363,18 +363,18 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
               </div>
 
               {/* Note about price */}
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed font-medium flex items-center gap-2">
-                <Info className="w-4 h-4 text-blue-600 shrink-0" />
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-xl text-xs text-blue-900 dark:text-blue-300 leading-relaxed font-medium flex items-center gap-2">
+                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                 <span>{t("noRateNote")}</span>
               </div>
 
               {/* Modal Footer */}
-              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
                   disabled={isPending}
-                  className="px-5 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="px-5 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 >
                   {t("cancel")}
                 </button>

@@ -236,7 +236,13 @@ export async function searchProductsAction(query?: string) {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 export async function getSettingsAction() {
-  const [row] = await db.select().from(settings).where(eq(settings.id, "default")).limit(1);
+  let [row] = await db.select().from(settings).where(eq(settings.id, "default")).limit(1);
+  if (!row) {
+    [row] = await db.insert(settings).values({ id: "default" }).onConflictDoNothing().returning();
+    if (!row) {
+      [row] = await db.select().from(settings).where(eq(settings.id, "default")).limit(1);
+    }
+  }
   return row ?? null;
 }
 

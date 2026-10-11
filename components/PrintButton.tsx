@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Printer, FileDown, FolderOpen, Check, Loader2, Info } from "lucide-react";
+import { Printer, FileDown, FolderOpen, Loader2, Info } from "lucide-react";
 import {
   pickSaveDirectory,
   getSavedDirectoryName,
@@ -28,9 +28,11 @@ export default function PrintButton({
   const cleanFilename = getCleanInvoiceFilename(invoiceNumber, customerName).replace(/\.pdf$/i, "");
 
   useEffect(() => {
-    setIsSupported(isDirectoryPickerSupported());
-    const saved = getSavedDirectoryName();
-    if (saved) setFolderName(saved);
+    requestAnimationFrame(() => {
+      setIsSupported(isDirectoryPickerSupported());
+      const saved = getSavedDirectoryName();
+      if (saved) setFolderName(saved);
+    });
   }, []);
 
   // ── auto-trigger print when opened via ?print=1 ──────────────────────────
@@ -92,27 +94,27 @@ export default function PrintButton({
           type="button"
           onClick={handlePickFolder}
           disabled={savingLabel}
-          className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl border border-gray-200 transition-colors cursor-pointer disabled:opacity-60"
+          className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 transition-colors cursor-pointer disabled:opacity-60"
           title="Remember which folder to save bills in"
         >
           {savingLabel
-            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
-            : <FolderOpen className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600 dark:text-amber-400" />
+            : <FolderOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />}
           {folderName ? (
             <span>
-              Save to: <strong className="text-gray-900">{folderName}</strong>
-              <span className="ml-1 text-gray-400 font-normal">(Change)</span>
+              Save to: <strong className="text-gray-900 dark:text-gray-100">{folderName}</strong>
+              <span className="ml-1 text-gray-400 dark:text-gray-500 font-normal">(Change)</span>
             </span>
           ) : (
-            <span className="text-orange-700 font-bold">Set Bills Folder</span>
+            <span className="text-orange-700 dark:text-orange-400 font-bold">Set Bills Folder</span>
           )}
         </button>
       )}
 
       {/* ── Toast ────────────────────────────────────────────────────────── */}
       {toastMsg && (
-        <span className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-900 px-3 py-1.5 rounded-xl font-semibold text-xs animate-fade-in shadow-xs max-w-sm">
-          <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+        <span className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900/60 text-blue-900 dark:text-blue-200 px-3 py-1.5 rounded-xl font-semibold text-xs animate-fade-in shadow-xs max-w-sm">
+          <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
           <span>{toastMsg}</span>
         </span>
       )}
@@ -123,10 +125,10 @@ export default function PrintButton({
       <button
         type="button"
         onClick={() => openPrintDialog(true)}
-        className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-800 text-sm font-bold rounded-xl border border-gray-300 shadow-2xs hover:-translate-y-0.5 transition-all cursor-pointer"
+        className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-bold rounded-xl border border-gray-300 dark:border-gray-700 shadow-2xs hover:-translate-y-0.5 transition-all cursor-pointer"
         title={`Save as "${cleanFilename}.pdf" — opens print dialog, choose Save as PDF`}
       >
-        <FileDown className="w-4 h-4 text-blue-600" />
+        <FileDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         <span>Save as PDF</span>
       </button>
 
@@ -134,7 +136,7 @@ export default function PrintButton({
       <button
         type="button"
         onClick={() => openPrintDialog(false)}
-        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl shadow-sm shadow-blue-500/20 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
         title="Open browser print window"
       >
         <Printer className="w-4 h-4" />

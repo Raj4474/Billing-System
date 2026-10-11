@@ -30,11 +30,11 @@ export default function PaymentStatusForm({
       defaultValue={current}
       onChange={handleChange}
       disabled={isPending}
-      className={`px-4 py-3 text-lg font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-100 uppercase tracking-wide cursor-pointer transition-colors hover:bg-gray-50 ${colorMap[current] ?? ""}`}
+      className={`px-4 py-3 text-lg font-bold border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/40 uppercase tracking-wide cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${colorMap[current] ?? ""}`}
     >
-      <option value="unpaid" className="text-red-600 font-bold uppercase">Unpaid</option>
-      <option value="partial" className="text-yellow-600 font-bold uppercase">Partial</option>
-      <option value="paid" className="text-green-600 font-bold uppercase">Paid</option>
+      <option value="unpaid" className="text-red-600 dark:text-red-400 font-bold uppercase bg-white dark:bg-gray-900">Unpaid</option>
+      <option value="partial" className="text-yellow-600 dark:text-yellow-400 font-bold uppercase bg-white dark:bg-gray-900">Partial</option>
+      <option value="paid" className="text-green-600 dark:text-green-400 font-bold uppercase bg-white dark:bg-gray-900">Paid</option>
     </select>
   );
 }
