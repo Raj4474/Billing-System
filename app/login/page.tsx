@@ -30,9 +30,9 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-            Rupala Enterprise
+            Billing System
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Billing System</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Enterprise Invoicing</p>
         </div>
 
         {/* Card */}

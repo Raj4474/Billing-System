@@ -13,7 +13,7 @@ type Settings = Awaited<ReturnType<typeof getSettingsAction>>;
 
 export default function SettingsForm({ initial }: { initial: Settings }) {
   const [form, setForm] = useState({
-    companyName: initial?.companyName ?? "Rupala Enterprise",
+    companyName: initial?.companyName ?? "Billing System",
     address: initial?.address ?? "",
     phone: initial?.phone ?? "",
     email: initial?.email ?? "",
@@ -80,7 +80,7 @@ export default function SettingsForm({ initial }: { initial: Settings }) {
       <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 transition-colors">
         <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Company Information</h2>
         <div className="grid grid-cols-2 gap-4">
-          {field("Company Name", "companyName", { placeholder: "Rupala Enterprise" })}
+          {field("Company Name", "companyName", { placeholder: "Billing System" })}
           {field("GSTIN", "gstin", { placeholder: "24ATKPR5908H1ZE" })}
           {field("MSME No.", "msmeNo", { placeholder: "UDYAM-GJ-XX-XXXXXXX" })}
           {field("Phone", "phone", { placeholder: "9714304141" })}

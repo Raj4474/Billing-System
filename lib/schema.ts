@@ -70,7 +70,7 @@ export const invoiceItems = pgTable("invoice_items", {
 // ─── Settings (singleton row: id = 'default') ─────────────────────────────────
 export const settings = pgTable("settings", {
   id: text("id").primaryKey().default("default"),
-  companyName: text("company_name").default("Rupala Enterprise"),
+  companyName: text("company_name").default("Billing System"),
   address: text("address"),
   phone: text("phone"),
   email: text("email"),

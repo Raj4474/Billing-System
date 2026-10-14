@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rupala Enterprise — Billing",
-  description: "Internal billing system",
+  title: "Billing System",
+  description: "Billing and Invoicing System",
   robots: {
     index: false,
     follow: false,

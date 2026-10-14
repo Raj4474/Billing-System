@@ -24,9 +24,8 @@ export default function Sidebar() {
           <FileText className="w-5 h-5" />
         </div>
         <p className="font-bold text-gray-900 dark:text-gray-100 text-base uppercase tracking-wide leading-tight">
-          Rupala Enterprise
+          Billing System
         </p>
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">Billing System</p>
       </div>
 
       {/* Nav */}

@@ -392,7 +392,7 @@ export default function InvoiceView({
                 editTitle="Edit Company Information"
                 className="border border-black bg-[#e9ecef] py-1 px-4 text-center font-serif font-bold text-xl md:text-2xl tracking-wider uppercase text-black"
               >
-                {settings.companyName || "RUPALA ENTERPRISE"}
+                {settings.companyName || "BILLING SYSTEM"}
               </ToggleWrapper>
 
               <div className="text-center text-[10px] uppercase font-bold text-black mt-2 leading-tight px-1">
@@ -406,7 +406,7 @@ export default function InvoiceView({
                     <div className="whitespace-pre-line leading-relaxed">{settings.address}</div>
                   ) : (
                     <>
-                      <div>GROUND FLOOR, OFFICE 12X25, RUPALA ENTERPRISE, GIR GADHADA ROAD</div>
+                      <div>GROUND FLOOR, OFFICE 12X25, BILLING SYSTEM, GIR GADHADA ROAD</div>
                       <div className="mt-0.5">LAND SURVEY NO. 144/P2, VADVIYALA, GIR SOMNATH, GUJARAT, 362530</div>
                     </>
                   )}
@@ -428,10 +428,10 @@ export default function InvoiceView({
             <div className="p-3 flex flex-col items-center justify-center relative bg-white select-none border-l border-black">
               <div className="text-center w-full">
                 <div className="font-black text-[28px] tracking-tight text-black leading-none uppercase font-sans">
-                  RUPALA
+                  BILLING
                 </div>
                 <div className="font-bold text-[11px] tracking-[0.25em] text-black leading-tight mt-1 uppercase font-sans">
-                  ENTERPRISE
+                  SYSTEM
                 </div>
                 <div className="w-16 h-[2px] bg-black mx-auto mt-2"></div>
               </div>
@@ -827,7 +827,7 @@ export default function InvoiceView({
 
             {/* Right: Authorised Signatory */}
             <div className="p-2 flex flex-col justify-between text-right text-[10px] min-h-[95px]">
-              <div className="font-bold">For, {settings.companyName || "RUPALA ENTERPRISE"}</div>
+              <div className="font-bold">For, {settings.companyName || "BILLING SYSTEM"}</div>
               <div className="text-center mt-auto font-medium text-[9.5px]">
                 (Authorised Signatory)
               </div>
